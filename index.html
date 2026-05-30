@@ -270,27 +270,18 @@ td{padding:9px 12px;white-space:nowrap}
 </div>
 
 <script>
-// URL do seu Apps Script que se conecta com a planilha do Google Sheets
 const API_URL = 'https://script.google.com/macros/s/AKfycbw3PRhwQRz5TtHqmlz_UWUwWAam4onXPD_ZlI66zV0vkO6XlogjA1N0ELDnw-qRGt1R/exec';
-
-// Criando a variável DATA que vai começar vazia
 let DATA = {};
-
-// Função especial para carregar os dados antes de mostrar o painel
 async function carregarDados() {
     try {
         const response = await fetch(API_URL);
         if (!response.ok) throw new Error('Erro ao buscar dados da planilha');
         DATA = await response.json();
-        
-        // Ativa os filtros e renderiza o dashboard após receber os dados atualizados
         applyFilters(); 
     } catch (error) {
         console.error('Ops! Algo deu errado ao carregar os dados:', error);
     }
 }
-
-// Executa a busca automática assim que o dashboard abre
 carregarDados();
 const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtK = v => v >= 1000000 ? 'R$ '+(v/1000000).toFixed(1)+'M' : v >= 1000 ? 'R$ '+(v/1000).toFixed(0)+'K' : fmt(v);
