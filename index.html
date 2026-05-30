@@ -1,314 +1,676 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Marketing</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        .page { display: none; }
-        .page.active { display: block; }
-        .nav-btn.active { background-color: #3b82f6; color: white; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard MKT — Contas a Pagar</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;
+  --red:#f85149;--red-s:#3d1a1a;--red-m:#7d2020;
+  --green:#3fb950;--green-s:#1a2e1a;
+  --orange:#d29922;--orange-s:#2d2005;
+  --purple:#bc8cff;--purple-s:#2a1a3e;
+  --gold:#e3b341;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+/* ── HEADER ── */
+.header{background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.header-left h1{font-size:20px;font-weight:700;letter-spacing:.5px;color:#fff}
+.header-left p{font-size:12px;color:var(--muted);margin-top:3px}
+.badge-ref{background:#1f3a4a;color:var(--accent);font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--accent)}
+/* ── NAV TABS ── */
+.nav{display:flex;gap:4px;padding:12px 28px 0;background:var(--surface);border-bottom:1px solid var(--border)}
+.nav-btn{padding:8px 18px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;border-bottom:2px solid transparent;transition:all .2s;border-radius:4px 4px 0 0}
+.nav-btn:hover{color:var(--text);background:var(--surface2)}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface2)}
+/* ── PAGES ── */
+.page{display:none;padding:24px 28px;animation:fadeIn .25s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;transition:transform .15s}
+.kpi:hover{transform:translateY(-2px)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.red::before{background:var(--red)}
+.kpi.green::before{background:var(--green)}
+.kpi.blue::before{background:var(--accent)}
+.kpi.orange::before{background:var(--orange)}
+.kpi.purple::before{background:var(--purple)}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.kpi-value{font-size:22px;font-weight:700;line-height:1.1}
+.kpi.red .kpi-value{color:var(--red)}
+.kpi.green .kpi-value{color:var(--green)}
+.kpi.blue .kpi-value{color:var(--accent)}
+.kpi.orange .kpi-value{color:var(--orange)}
+.kpi.purple .kpi-value{color:var(--purple)}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:5px}
+/* ── CHARTS GRID ── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.charts-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.card-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title span{color:var(--accent)}
+canvas{max-width:100%}
+/* ── FILTERS ── */
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;align-items:center}
+.filters select,.filters input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:6px;font-size:13px;outline:none;transition:border .2s}
+.filters select:focus,.filters input:focus{border-color:var(--accent)}
+.filters input{min-width:220px}
+.btn-clear{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;transition:all .2s}
+.btn-clear:hover{border-color:var(--accent);color:var(--accent)}
+.filter-count{font-size:12px;color:var(--muted);margin-left:auto}
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--surface2);padding:10px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--text)}
+thead th.sort-asc::after{content:' ↑';color:var(--accent)}
+thead th.sort-desc::after{content:' ↓';color:var(--accent)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:var(--surface2)}
+tbody tr.vencido{background:#1e0f0f}
+tbody tr.vencido:hover{background:#2a1414}
+td{padding:9px 12px;white-space:nowrap}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.4px}
+.badge-v{background:var(--red-s);color:var(--red);border:1px solid var(--red-m)}
+.badge-a{background:var(--green-s);color:var(--green)}
+.badge-aging-1{background:#3d1a1a;color:#f85149}
+.badge-aging-2{background:#2d2005;color:#d29922}
+.badge-aging-3{background:#1a1a0a;color:#e3b341}
+.badge-aging-4{background:#3d1a1a;color:#ff6b6b;font-weight:800}
+/* ── PROGRESS BARS ── */
+.pbar-wrap{display:flex;align-items:center;gap:8px}
+.pbar{flex:1;background:var(--surface2);border-radius:4px;height:6px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.pbar-label{font-size:11px;color:var(--muted);min-width:70px;text-align:right}
+/* ── PAGINATION ── */
+.pagination{display:flex;align-items:center;gap:8px;margin-top:14px;justify-content:flex-end}
+.pagination button{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:5px;cursor:pointer;font-size:12px}
+.pagination button:hover{border-color:var(--accent);color:var(--accent)}
+.pagination button:disabled{opacity:.3;cursor:default}
+.pagination span{font-size:12px;color:var(--muted)}
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+/* ── ALERT STRIP ── */
+.alert{background:linear-gradient(90deg,#3d1a1a,#1e0f0f);border:1px solid var(--red-m);border-radius:8px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:13px}
+.alert-icon{font-size:18px}
+/* ── LOADING SCREEN ── */
+#loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999}
+.spinner{width:40px;height:40px;border:4px solid var(--surface2);border-top:4px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:15px}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+/* ── RESPONSIVE ── */
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.charts-row,.charts-row-3{grid-template-columns:1fr}}
+</style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body>
 
-    <nav class="bg-white shadow-md p-4 flex justify-between items-center mb-6">
-        <h1 class="text-xl font-bold text-gray-800">Dashboard MKT</h1>
-        <div class="flex gap-2">
-            <button onclick="showPage('dashboard')" id="btn-dashboard" class="nav-btn active px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-200 transition">Dashboard</button>
-            <button onclick="showPage('tabela')" id="btn-tabela" class="nav-btn px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-200 transition">Tabela de Dados</button>
-        </div>
-    </nav>
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <p style="color:var(--muted); font-size:16px;">Carregando dados em tempo real da planilha...</p>
+</div>
 
-    <div class="max-w-7xl mx-auto px-4">
-        
-        <div id="dashboard" class="page active space-y-6">
-            
-            <div class="bg-white p-4 rounded-xl shadow-sm flex flex-wrap gap-4 items-center">
-                <div class="flex flex-col">
-                    <label class="text-xs font-semibold text-gray-500 mb-1">FILIAL</label>
-                    <select id="filterFilial" onchange="applyFilters()" class="border rounded-lg p-2 bg-gray-50 text-sm min-w-[200px]">
-                        <option value="">Todas</option>
-                    </select>
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-xs font-semibold text-gray-500 mb-1">STATUS</label>
-                    <select id="filterStatus" onchange="applyFilters()" class="border rounded-lg p-2 bg-gray-50 text-sm min-w-[150px]">
-                        <option value="">Todos</option>
-                        <option value="Em aberto">Em aberto</option>
-                        <option value="Vencido">Vencido</option>
-                    </select>
-                </div>
-            </div>
+<div class="header">
+  <div class="header-left">
+    <h1>📊 Dashboard · Contas a Pagar em Aberto · MKT</h1>
+    <p>INC Empreendimentos — Juiz de Fora · Uberlândia · Uberaba · São João del-Rei · São José do Rio Preto · São José dos Campos</p>
+  </div>
+  <span class="badge-ref">Referência: Atualizado via API</span>
+</div>
 
-            <div id="kpiContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
-                    <p class="text-sm font-medium text-gray-500">Saldo Total</p>
-                    <h3 id="kpiTotal" class="text-2xl font-bold text-gray-800">R$ 0,00</h3>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500">
-                    <p class="text-sm font-medium text-gray-500">Total Vencido</p>
-                    <h3 id="kpiVencido" class="text-2xl font-bold text-red-600">R$ 0,00</h3>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
-                    <p class="text-sm font-medium text-gray-500">A Vencer</p>
-                    <h3 id="kpiAVencer" class="text-2xl font-bold text-green-600">R$ 0,00</h3>
-                </div>
-            </div>
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('visao-geral', event)">📈 Visão Geral</button>
+  <button class="nav-btn" onclick="showPage('fornecedores', event)">👥 Fornecedores</button>
+  <button class="nav-btn" onclick="showPage('filiais', event)">🏢 Filiais</button>
+  <button class="nav-btn" onclick="showPage('categorias', event)">📂 Categorias</button>
+  <button class="nav-btn" onclick="showPage('registros', event)">🔍 Todos os Registros</button>
+</nav>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-4 rounded-xl shadow-sm">
-                    <h4 class="text-sm font-semibold text-gray-700 mb-4">Evolução por Classificação</h4>
-                    <canvas id="chartClassificacao"></canvas>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm">
-                    <h4 class="text-sm font-semibold text-gray-700 mb-4">Top Fornecedores</h4>
-                    <canvas id="chartFornecedores"></canvas>
-                </div>
-            </div>
+<div id="visao-geral" class="page active">
 
-        </div>
+  <div class="alert" id="facebookAlert" style="display:none;">
+    <span class="alert-icon">🚨</span>
+    <div><strong style="color:var(--red)">Atenção:</strong> Há pendências críticas de alto valor aguardando revisão. Verifique os prazos e ações recomendadas.</div>
+  </div>
 
-        <div id="tabela" class="page bg-white rounded-xl shadow-sm overflow-hidden">
-            <div class="p-4 border-b flex justify-between items-center bg-gray-50">
-                <h3 class="font-semibold text-gray-700">Listagem de Parcelas</h3>
-                <span id="tableInfo" class="text-xs text-gray-500 font-medium"></span>
-            </div>
-            
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-gray-600">
-                    <thead class="bg-gray-100 text-xs text-gray-700 uppercase font-semibold">
-                        <tr>
-                            <th class="p-4">Filial</th>
-                            <th class="p-4">Fornecedor</th>
-                            <th class="p-4">Nr Doc / Parcela</th>
-                            <th class="p-4">Vencimento</th>
-                            <th class="p-4">Classificação</th>
-                            <th class="p-4">Valor</th>
-                            <th class="p-4">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-gray-200">
-                        </tbody>
-                </table>
-            </div>
+  <div class="kpi-grid" id="kpi-grid"></div>
 
-            <div class="p-4 border-t flex justify-between items-center bg-gray-50">
-                <button onclick="changePage(-1)" id="btnPrev" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-100 disabled:opacity-50 transition">Anterior</button>
-                <span id="pageInfo" class="text-sm text-gray-600 font-medium">Página 1</span>
-                <button onclick="changePage(1)" id="btnNext" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-100 disabled:opacity-50 transition">Próxima</button>
-            </div>
-        </div>
-
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-title"><span>⚠</span> Aging — Vencidos por Faixa</div>
+      <div style="position:relative;height:220px"><canvas id="chartAging"></canvas></div>
     </div>
+    <div class="card">
+      <div class="card-title"><span>📅</span> A Vencer — Projeção Mensal</div>
+      <div style="position:relative;height:220px"><canvas id="chartMensal"></canvas></div>
+    </div>
+  </div>
 
-    <script>
-        // URL de comunicação com o seu Apps Script
-        const API_URL = 'https://script.google.com/macros/s/AKfycbw3PRhwQRz5TtHqmlz_UWUwWAam4onXPD_ZlI66zV0vkO6XlogjA1N0ELDnw-qRGt1R/exec';
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-title"><span>🏢</span> Top 8 Filiais — Saldo Total</div>
+      <div style="position:relative;height:260px"><canvas id="chartFilial"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>📂</span> Saldo por Categoria (CLA)</div>
+      <div style="position:relative;height:260px"><canvas id="chartCat"></canvas></div>
+    </div>
+  </div>
 
-        // Estrutura global de armazenamento dos dados tratada
-        let RAW_DATA = [];
-        let FILTERED_DATA = [];
+</div>
+
+<div id="fornecedores" class="page">
+  <div class="card">
+    <div class="card-title"><span>👥</span> Top 20 Fornecedores — Saldo em Aberto</div>
+    <div style="position:relative;height:460px"><canvas id="chartForn"></canvas></div>
+  </div>
+  <br>
+  <div class="card">
+    <div class="card-title"><span>📋</span> Detalhe por Fornecedor</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Fornecedor</th><th>Status</th><th>Filial</th><th>Categoria</th>
+          <th>Parcelas</th><th>Dias Atraso</th><th>Saldo em Aberto</th>
+        </tr></thead>
+        <tbody id="tbodyForn"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="filiais" class="page">
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title"><span>🏢</span> Saldo Vencido vs. A Vencer por Filial</div>
+    <div style="position:relative;height:380px"><canvas id="chartFilialStack"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>📊</span> Resumo por Filial</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Filial / Empreendimento</th><th>Vencido (R$)</th><th>A Vencer (R$)</th><th>Total (R$)</th><th>% Vencido</th></tr></thead>
+        <tbody id="tbodyFilial"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="categorias" class="page">
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-title"><span>🥧</span> Distribuição por Categoria</div>
+      <div style="position:relative;height:320px"><canvas id="chartPie"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>📊</span> Vencido vs. A Vencer por Categoria</div>
+      <div style="position:relative;height:320px"><canvas id="chartCatStack"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>📋</span> Detalhe por Categoria</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Categoria (CLA)</th><th>Vencido (R$)</th><th>A Vencer (R$)</th><th>Total (R$)</th><th>% do Total</th><th>Participação</th></tr></thead>
+        <tbody id="tbodyCat"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="registros" class="page">
+  <div class="filters">
+    <input type="text" id="fSearch" placeholder="🔍  Buscar fornecedor, filial, categoria..." oninput="applyFilters()">
+    <select id="fStatus" onchange="applyFilters()">
+      <option value="">Todos os status</option>
+      <option value="Vencido">🔴 Vencido</option>
+      <option value="Em aberto">🟢 Em aberto</option>
+    </select>
+    <select id="fFilial" onchange="applyFilters()">
+      <option value="">Todas as filiais</option>
+    </select>
+    <select id="fCat" onchange="applyFilters()">
+      <option value="">Todas as categorias</option>
+    </select>
+    <select id="fAging" onchange="applyFilters()">
+      <option value="">Todos os agings</option>
+      <option value="1-30 dias">1–30 dias</option>
+      <option value="31-60 dias">31–60 dias</option>
+      <option value="61-90 dias">61–90 dias</option>
+      <option value="90+ dias">90+ dias</option>
+    </select>
+    <button class="btn-clear" onclick="clearFilters()">✕ Limpar</button>
+    <span class="filter-count" id="filterCount"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th onclick="sortTable('STATUS_VENCIMENTO', event)">Status</th>
+        <th onclick="sortTable('AGING', event)">Aging</th>
+        <th onclick="sortTable('NOME_FANTASIA', event)">Filial</th>
+        <th onclick="sortTable('AGENTE', event)">Fornecedor</th>
+        <th onclick="sortTable('VENCIMENTO', event)">Vencimento</th>
+        <th onclick="sortTable('TIPO_DOC', event)">Tipo Doc</th>
+        <th onclick="sortTable('FORMA_PAGAMENTO', event)">Forma Pgto</th>
+        <th onclick="sortTable('VALOR', event)">Valor (R$)</th>
+        <th onclick="sortTable('SALDO_EM_ABERTO', event)">Saldo (R$)</th>
+        <th onclick="sortTable('DIAS_ATRASO', event)">Dias Atraso</th>
+        <th onclick="sortTable('CLA_DESCRICAO', event)">Categoria</th>
+      </tr></thead>
+      <tbody id="tbodyReg"></tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <button onclick="changePage(-1)" id="btnPrev">‹ Anterior</button>
+    <span id="pageInfo"></span>
+    <button onclick="changePage(1)" id="btnNext">Próxima ›</button>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbw3PRhwQRz5TtHqmlz_UWUwWAam4onXPD_ZlI66zV0vkO6XlogjA1N0ELDnw-qRGt1R/exec';
+let DATA = {};
+let filtered = [];
+let sortCol = 'SALDO_EM_ABERTO', sortDir = -1;
+let currentPage = 1;
+const pageSize = 30;
+
+const fmt = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtK = v => v >= 1000000 ? 'R$ '+(v/1000000).toFixed(1)+'M' : v >= 1000 ? 'R$ '+(v/1000).toFixed(0)+'K' : fmt(v);
+
+const COLORS = {red:'#f85149',orange:'#d29922',yellow:'#e3b341',darkred:'#c0392b',green:'#3fb950',blue:'#58a6ff',purple:'#bc8cff'};
+const PALETTE = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364','#d2a8ff','#e3b341','#ff7b72'];
+
+// Configuração padrão do Chart.js
+Chart.defaults.color = '#8b949e';
+Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
+Chart.defaults.font.size = 11;
+
+// Função principal de conexão
+async function carregarDados() {
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error('Erro ao buscar dados da planilha');
+        DATA = await response.json();
         
-        let currentPage = 1;
-        const rowsPerPage = 10;
+        // Esconde a tela de carregamento
+        document.getElementById('loading-screen').style.display = 'none';
+        
+        // Inicializa o Dashboard
+        inicializarDashboard();
+    } catch (error) {
+        console.error('Ops! Algo deu errado ao carregar os dados:', error);
+        document.getElementById('loading-screen').innerHTML = `<p style="color:var(--red); font-size:16px;">Falha ao conectar com o Google Sheets. Verifique o Apps Script.</p>`;
+    }
+}
 
-        // Instâncias Globais dos Gráficos para evitar duplicações/erros ao atualizar
-        let chartClassObj = null;
-        let chartFornObj = null;
+function inicializarDashboard() {
+    // Configura os Filtros Select Dinâmicos
+    const filiaisLista = [...new Set(DATA.registros.map(r=>r.NOME_FANTASIA))].sort();
+    filiaisLista.forEach(f=>{document.getElementById('fFilial').innerHTML+=`<option value="${f}">${f}</option>`});
+    const catsLista = [...new Set(DATA.registros.map(r=>r.CLA_DESCRICAO))].sort();
+    catsLista.forEach(c=>{document.getElementById('fCat').innerHTML+=`<option value="${c}">${c}</option>`});
 
-        // Formatadores numéricos básicos
-        const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // Renderiza Elementos Visuais
+    renderizarKPIs();
+    renderizarGraficos();
+    renderizarTabelasEstaticas();
+    
+    // Alerta Condicional Dinâmico (Facebook/Meta)
+    const facebookData = DATA.fornecedores.find(f => f.AGENTE.toUpperCase().includes('FACEBOOK') || f.AGENTE.toUpperCase().includes('META'));
+    if (facebookData && facebookData.status === 'Vencido') {
+        const alertBox = document.getElementById('facebookAlert');
+        alertBox.innerHTML = `<span class="alert-icon">🚨</span><div><strong style="color:var(--red)">${facebookData.AGENTE}: ${fmt(facebookData.saldo)} vencido há ${facebookData.dias} dias.</strong> &nbsp;Ação imediata recomendada.</div>`;
+        alertBox.style.display = 'flex';
+    }
 
-        // Controle de Alternância de Abas/Páginas
-        function showPage(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            
-            document.getElementById(id).classList.add('active');
-            document.getElementById('btn-' + id).classList.add('active');
+    applyFilters(); 
+}
+
+function renderizarKPIs() {
+    const totalVencidoPct = ((DATA.kpis.vencido / DATA.kpis.total) * 100).toFixed(1);
+    const totalAVencerPct = ((DATA.kpis.a_vencer / DATA.kpis.total) * 100).toFixed(1);
+    
+    // Procura dinamicamente o maior fornecedor vencido
+    const vencidosForn = DATA.fornecedores.filter(f => f.status === 'Vencido');
+    const maiorVencido = vencidosForn.length > 0 ? vencidosForn.reduce((max, f) => f.saldo > max.saldo ? f : max, vencidosForn[0]) : null;
+
+    const kpiDefs = [
+        {label:'Saldo Total em Aberto', value: fmtK(DATA.kpis.total), sub: DATA.kpis.total_parcelas+' parcelas', cls:'blue'},
+        {label:'Total Vencido', value: fmtK(DATA.kpis.vencido), sub: `${DATA.kpis.qtd_vencido} parcelas · ${totalVencidoPct}%`, cls:'red'},
+        {label:'A Vencer', value: fmtK(DATA.kpis.a_vencer), sub: `${DATA.kpis.qtd_aberto} parcelas · ${totalAVencerPct}%`, cls:'green'},
+        {label:'Projeção Próximo Mês', value: DATA.mensal && DATA.mensal.length > 0 ? fmtK(DATA.mensal[0].valor) : 'R$ 0', sub: 'A vencer', cls:'orange'},
+        {label:'Maior Alvo Vencido', value: maiorVencido ? fmtK(maiorVencido.saldo) : 'R$ 0', sub: maiorVencido ? maiorVencido.nome_curto : 'Nenhum', cls:'purple'},
+    ];
+    
+    const grid = document.getElementById('kpi-grid');
+    grid.innerHTML = '';
+    kpiDefs.forEach(k=>{
+        grid.innerHTML += `<div class="kpi ${k.cls}"><div class="kpi-label">${k.label}</div><div class="kpi-value">${k.value}</div><div class="kpi-sub">${k.sub}</div></div>`;
+    });
+}
+
+function renderizarGraficos() {
+    // Aging bar
+    new Chart(document.getElementById('chartAging'),{
+      type:'bar',
+      data:{
+        labels: DATA.aging.map(d=>d.faixa+'  ('+d.qtd+'x)'),
+        datasets:[{
+          label:'Saldo Vencido',
+          data: DATA.aging.map(d=>d.valor),
+          backgroundColor:[COLORS.red,COLORS.orange,COLORS.yellow,COLORS.darkred],
+          borderRadius:5, borderWidth:0
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},
+        scales:{
+          x:{grid:{color:'#21262d'},ticks:{color:'#8b949e'}},
+          y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}}
         }
+      }
+    });
 
-        // Requisição Principal e Carregamento Automático
-        async function carregarDados() {
-            try {
-                console.log("Conectando à planilha...");
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error('Falha HTTP: ' + response.status);
-                
-                const resJson = await response.json();
-                console.log("Dados brutos vindos da planilha:", resJson);
-
-                // Normaliza independente se vier envelopado num objeto ou array direto
-                let listaBruta = Array.isArray(resJson) ? resJson : (resJson.parcelas || []);
-
-                // Mapeia e sanitiza as colunas exatamente como estão em MAIÚSCULO na sua planilha
-                RAW_DATA = listaBruta.map(item => {
-                    let valorLimpo = parseFloat(String(item.VALOR || item.SALDO_EM_ABERTO || 0).replace(',', '.'));
-                    if (isNaN(valorLimpo)) valorLimpo = 0;
-
-                    return {
-                        filial: item.NOME_FANTASIA || "Não Informado",
-                        fornecedor: item.AGENTE || "Não Informado",
-                        nrDoc: item.NR_DOC || item.NR_DOCUMENTO || "-",
-                        parcela: item.PARCELA || "1",
-                        vencimento: item.VENCIMENTO || "-",
-                        classificacao: item.CLA_DESCRICAO || "Outros",
-                        valor: valorLimpo,
-                        status: String(item.STATUS_VENCIMENTO || "Em aberto").trim()
-                    };
-                });
-
-                buildFilterOptions();
-                applyFilters();
-
-            } catch (error) {
-                console.error('Erro crítico ao ler planilha:', error);
-                alert('Erro ao carregar dados. Verifique a publicação do seu script e o console F12.');
-            }
+    // Mensal bar
+    new Chart(document.getElementById('chartMensal'),{
+      type:'bar',
+      data:{
+        labels: DATA.mensal.map(d=>d.mes),
+        datasets:[{
+          label:'A Vencer',
+          data: DATA.mensal.map(d=>d.valor),
+          backgroundColor: COLORS.blue,
+          borderRadius:5,borderWidth:0
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},
+        scales:{
+          x:{grid:{display:false},ticks:{color:'#8b949e',maxRotation:45,autoSkip:false}},
+          y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}}
         }
+      }
+    });
 
-        // Constrói dinamicamente as opções do select de Filiais baseado na planilha
-        function buildFilterOptions() {
-            const filiais = [...new Set(RAW_DATA.map(i => i.filial))].sort();
-            const selectFilial = document.getElementById('filterFilial');
-            
-            // Limpa opções antigas mantendo a primeira "Todas"
-            selectFilial.innerHTML = '<option value="">Todas</option>';
-            filiais.forEach(f => {
-                selectFilial.innerHTML += `<option value="${f}">${f}</option>`;
-            });
+    // Filial horizontal bar (top 8)
+    const top8fil = DATA.filial.slice(0,8);
+    new Chart(document.getElementById('chartFilial'),{
+      type:'bar',
+      data:{
+        labels: top8fil.map(d=>d.NOME_FANTASIA.length>22?d.NOME_FANTASIA.slice(0,22)+'…':d.NOME_FANTASIA),
+        datasets:[
+          {label:'Vencido', data:top8fil.map(d=>d.vencido), backgroundColor:COLORS.red, borderRadius:3,borderWidth:0},
+          {label:'A Vencer', data:top8fil.map(d=>d.a_vencer), backgroundColor:COLORS.blue, borderRadius:3,borderWidth:0}
+        ]
+      },
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'top',labels:{color:'#8b949e',boxWidth:10,padding:12}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.raw)}}},
+        scales:{
+          x:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK},stacked:false},
+          y:{grid:{display:false},ticks:{color:'#8b949e'}}
         }
+      }
+    });
 
-        // Processa os filtros de tela e reconstrói cálculos e tabelas
-        function applyFilters() {
-            const fFilial = document.getElementById('filterFilial').value;
-            const fStatus = document.getElementById('filterStatus').value;
-
-            FILTERED_DATA = RAW_DATA.filter(item => {
-                const matchFilial = !fFilial || item.filial === fFilial;
-                const matchStatus = !fStatus || item.status.toLowerCase() === fStatus.toLowerCase();
-                return matchFilial && matchStatus;
-            });
-
-            currentPage = 1; // Reseta para a primeira página
-            calculateKPIs();
-            renderCharts();
-            renderTable();
+    // Categoria bar
+    const top8cat = DATA.categoria.slice(0,8);
+    new Chart(document.getElementById('chartCat'),{
+      type:'bar',
+      data:{
+        labels: top8cat.map(d=>d.CLA_DESCRICAO.length>20?d.CLA_DESCRICAO.slice(0,20)+'…':d.CLA_DESCRICAO),
+        datasets:[{
+          label:'Saldo',
+          data:top8cat.map(d=>d.total),
+          backgroundColor: PALETTE.slice(0,8),
+          borderRadius:4,borderWidth:0
+        }]
+      },
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},
+        scales:{
+          x:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}},
+          y:{grid:{display:false},ticks:{color:'#8b949e'}}
         }
+      }
+    });
 
-        // Calcula dinamicamente os somatórios dos cartões de KPI
-        function calculateKPIs() {
-            let total = 0;
-            let vencido = 0;
-            let aVencer = 0;
-
-            FILTERED_DATA.forEach(item => {
-                total += item.valor;
-                if (item.status.toLowerCase().includes('vencido')) {
-                    vencido += item.valor;
-                } else {
-                    aVencer += item.valor;
-                }
-            });
-
-            document.getElementById('kpiTotal').innerText = fmt(total);
-            document.getElementById('kpiVencido').innerText = fmt(vencid);
-            document.getElementById('kpiAVencer').innerText = fmt(aVencer);
+    // Fornecedores bar chart
+    new Chart(document.getElementById('chartForn'),{
+      type:'bar',
+      data:{
+        labels: DATA.fornecedores.map(d=>d.nome_curto),
+        datasets:[{
+          label:'Saldo em Aberto',
+          data: DATA.fornecedores.map(d=>d.saldo),
+          backgroundColor: DATA.fornecedores.map(d=>d.status==='Vencido'?COLORS.red:COLORS.blue),
+          borderRadius:4,borderWidth:0
+        }]
+      },
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},
+        scales:{
+          x:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}},
+          y:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}
         }
+      }
+    });
 
-        // Renderiza e destrói instâncias antigas dos gráficos (Chart.js)
-        function renderCharts() {
-            // Agrupamento por Classificação
-            const clMap = {};
-            // Agrupamento por Fornecedor
-            const fnMap = {};
-
-            FILTERED_DATA.forEach(item => {
-                clMap[item.classificacao] = (clMap[item.classificacao] || 0) + item.valor;
-                fnMap[item.fornecedor] = (fnMap[item.fornecedor] || 0) + item.valor;
-            });
-
-            // Ordena e pega o Top 5 Fornecedores
-            const topFornecedores = Object.entries(fnMap)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5);
-
-            // --- GRÁFICO 1: Classificações ---
-            if (chartClassObj) chartClassObj.destroy();
-            chartClassObj = new Chart(document.getElementById('chartClassificacao'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(clMap),
-                    datasets: [{
-                        label: 'Total por Classificação',
-                        data: Object.values(clMap),
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 6
-                    }]
-                },
-                options: { responsive: true }
-            });
-
-            // --- GRÁFICO 2: Top Fornecedores ---
-            if (chartFornObj) chartFornObj.destroy();
-            chartFornObj = new Chart(document.getElementById('chartFornecedores'), {
-                type: 'doughnut',
-                data: {
-                    labels: topFornecedores.map(f => f[0]),
-                    datasets: [{
-                        data: topFornecedores.map(f => f[1]),
-                        backgroundColor: ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6']
-                    }]
-                },
-                options: { responsive: true }
-            });
+    // Filial stack chart
+    new Chart(document.getElementById('chartFilialStack'),{
+      type:'bar',
+      data:{
+        labels: DATA.filial.map(d=>d.NOME_FANTASIA.length>24?d.NOME_FANTASIA.slice(0,24)+'…':d.NOME_FANTASIA),
+        datasets:[
+          {label:'Vencido', data:DATA.filial.map(d=>d.vencido), backgroundColor:COLORS.red, borderRadius:0,borderWidth:0},
+          {label:'A Vencer', data:DATA.filial.map(d=>d.a_vencer), backgroundColor:COLORS.blue, borderRadius:4,borderWidth:0}
+        ]
+      },
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'top',labels:{color:'#8b949e',boxWidth:10}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.raw)}}},
+        scales:{
+          x:{stacked:true,grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}},
+          y:{stacked:true,grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}
         }
+      }
+    });
 
-        // Renderiza a tabela com paginação ativa
-        function renderTable() {
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
+    // Pie chart categorias
+    new Chart(document.getElementById('chartPie'),{
+      type:'doughnut',
+      data:{
+        labels: DATA.categoria.map(d=>d.CLA_DESCRICAO.length>22?d.CLA_DESCRICAO.slice(0,22)+'…':d.CLA_DESCRICAO),
+        datasets:[{data:DATA.categoria.map(d=>d.total), backgroundColor:PALETTE, borderColor:'#161b22', borderWidth:2}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+        plugins:{legend:{position:'right',labels:{color:'#8b949e',boxWidth:12,padding:8,font:{size:10}}},
+          tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmt(ctx.raw)}}}
+      }
+    });
 
-            const startIndex = (currentPage - 1) * rowsPerPage;
-            const endIndex = startIndex + rowsPerPage;
-            const pageItems = FILTERED_DATA.slice(startIndex, endIndex);
-
-            pageItems.forEach(item => {
-                const badgeColor = item.status.toLowerCase().includes('vencido') ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-                
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 transition border-b">
-                        <td class="p-4 font-medium text-gray-800">${item.filial}</td>
-                        <td class="p-4">${item.fornecedor}</td>
-                        <td class="p-4 text-xs text-gray-500">${item.nrDoc} <span class="text-gray-400">(${item.parcela})</span></td>
-                        <td class="p-4">${item.vencimento}</td>
-                        <td class="p-4 text-xs text-gray-500">${item.classificacao}</td>
-                        <td class="p-4 font-semibold text-gray-700">${fmt(item.valor)}</td>
-                        <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${badgeColor}">${item.status}</span></td>
-                    </tr>
-                `;
-            });
-
-            // Atualização dos botões e contadores de rodapé
-            const totalPages = Math.ceil(FILTERED_DATA.length / rowsPerPage) || 1;
-            document.getElementById('pageInfo').innerText = `Página ${currentPage} de ${totalPages}`;
-            document.getElementById('tableInfo').innerText = `${FILTERED_DATA.length} parcelas encontradas`;
-            
-            document.getElementById('btnPrev').disabled = currentPage === 1;
-            document.getElementById('btnNext').disabled = currentPage === totalPages;
+    // Cat stack chart
+    new Chart(document.getElementById('chartCatStack'),{
+      type:'bar',
+      data:{
+        labels: DATA.categoria.map(d=>d.CLA_DESCRICAO.length>18?d.CLA_DESCRICAO.slice(0,18)+'…':d.CLA_DESCRICAO),
+        datasets:[
+          {label:'Vencido', data:DATA.categoria.map(d=>d.vencido), backgroundColor:COLORS.red, borderRadius:0,borderWidth:0},
+          {label:'A Vencer', data:DATA.categoria.map(d=>d.total-d.vencido), backgroundColor:COLORS.blue, borderRadius:4,borderWidth:0}
+        ]
+      },
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'top',labels:{color:'#8b949e',boxWidth:10}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.raw)}}},
+        scales:{
+          x:{stacked:true,grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}},
+          y:{stacked:true,grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}
         }
+      }
+    });
+}
 
-        // Navegação de páginas na listagem
-        function changePage(direction) {
-            currentPage += direction;
-            renderTable();
-        }
+function renderizarTabelasEstaticas() {
+    // Tabela fornecedores
+    const tbForn = document.getElementById('tbodyForn');
+    tbForn.innerHTML = '';
+    DATA.fornecedores.forEach(f=>{
+      const badge = f.status==='Vencido'?'<span class="badge badge-v">VENCIDO</span>':'<span class="badge badge-a">EM ABERTO</span>';
+      const dias = f.dias>0?`<span style="color:${f.dias>90?COLORS.red:f.dias>60?COLORS.orange:COLORS.yellow}">${f.dias}d</span>`:'—';
+      tbForn.innerHTML+=`<tr class="${f.status==='Vencido'?'vencido':''}">
+        <td style="max-width:220px;white-space:normal">${f.AGENTE}</td>
+        <td>${badge}</td>
+        <td style="max-width:150px;white-space:normal;font-size:11px">${f.filial}</td>
+        <td style="font-size:11px">${f.categoria}</td>
+        <td style="text-align:center">${f.parcelas}</td>
+        <td style="text-align:center">${dias}</td>
+        <td style="text-align:right;font-weight:600;color:${f.status==='Vencido'?COLORS.red:COLORS.blue}">${fmt(f.saldo)}</td>
+      </tr>`;
+    });
 
-        // Inicialização Automática do painel completo
-        carregarDados();
-    </script>
+    // Tabela filial
+    const tbFilial = document.getElementById('tbodyFilial');
+    tbFilial.innerHTML = '';
+    DATA.filial.forEach((f,i)=>{
+      const pct = f.total > 0 ? (f.vencido/f.total*100).toFixed(1) : 0;
+      tbFilial.innerHTML+=`<tr>
+        <td>${f.NOME_FANTASIA}</td>
+        <td style="text-align:right;color:${COLORS.red};font-weight:600">${fmt(f.vencido)}</td>
+        <td style="text-align:right;color:${COLORS.blue}">${fmt(f.a_vencer)}</td>
+        <td style="text-align:right;font-weight:700">${fmt(f.total)}</td>
+        <td style="min-width:140px">
+          <div class="pbar-wrap">
+            <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:${parseFloat(pct)>70?COLORS.red:COLORS.orange}"></div></div>
+            <span class="pbar-label">${pct}%</span>
+          </div>
+        </td>
+      </tr>`;
+    });
+
+    // Tabela categorias
+    const tbCat = document.getElementById('tbodyCat');
+    tbCat.innerHTML = '';
+    DATA.categoria.forEach(c=>{
+      const pct = DATA.kpis.total > 0 ? (c.total/DATA.kpis.total*100).toFixed(1) : 0;
+      const av = c.total - c.vencido;
+      tbCat.innerHTML+=`<tr>
+        <td>${c.CLA_DESCRICAO}</td>
+        <td style="text-align:right;color:${COLORS.red}">${fmt(c.vencido)}</td>
+        <td style="text-align:right;color:${COLORS.blue}">${fmt(av)}</td>
+        <td style="text-align:right;font-weight:700">${fmt(c.total)}</td>
+        <td style="text-align:center">${pct}%</td>
+        <td style="min-width:120px">
+          <div class="pbar-wrap">
+            <div class="pbar"><div class="pbar-fill" style="width:${Math.min(pct*3,100)}%;background:${PALETTE[0]}"></div></div>
+          </div>
+        </td>
+      </tr>`;
+    });
+}
+
+// ── NAV CONTROLLER ──
+function showPage(id, event){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(event && event.target) {
+    event.target.classList.add('active');
+  }
+}
+
+// ── REGISTROS FILTRÁVEIS (Aba de pesquisas) ──
+function applyFilters(){
+  if (!DATA.registros) return;
+  
+  const s = document.getElementById('fSearch').value.toLowerCase();
+  const st = document.getElementById('fStatus').value;
+  const fi = document.getElementById('fFilial').value;
+  const ca = document.getElementById('fCat').value;
+  const ag = document.getElementById('fAging').value;
+  
+  filtered = DATA.registros.filter(r=>{
+    if(s && !r.AGENTE.toLowerCase().includes(s) && !r.NOME_FANTASIA.toLowerCase().includes(s) && !r.CLA_DESCRICAO.toLowerCase().includes(s) && !r.CNPJ.toLowerCase().includes(s)) return false;
+    if(st && r.STATUS_VENCIMENTO!==st) return false;
+    if(fi && r.NOME_FANTASIA!==fi) return false;
+    if(ca && r.CLA_DESCRICAO!==ca) return false;
+    if(ag){
+      if(ag==='1-30 dias' && !(r.DIAS_ATRASO>=1&&r.DIAS_ATRASO<=30)) return false;
+      if(ag==='31-60 dias' && !(r.DIAS_ATRASO>=31&&r.DIAS_ATRASO<=60)) return false;
+      if(ag==='61-90 dias' && !(r.DIAS_ATRASO>=61&&r.DIAS_ATRASO<=90)) return false;
+      if(ag==='90+ dias' && r.DIAS_ATRASO<=90) return false;
+    }
+    return true;
+  });
+  currentPage=1;
+  renderTable();
+}
+
+function clearFilters(){
+  ['fSearch','fStatus','fFilial','fCat','fAging'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  applyFilters();
+}
+
+function sortTable(col, event){
+  if(sortCol===col) sortDir*=-1; else {sortCol=col;sortDir=-1;}
+  document.querySelectorAll('thead th').forEach(th=>{th.classList.remove('sort-asc','sort-desc')});
+  if(event && event.target) {
+    event.target.classList.add(sortDir===1?'sort-asc':'sort-desc');
+  }
+  renderTable();
+}
+
+function agingBadge(r){
+  if(r.STATUS_VENCIMENTO!=='Vencido'||!r.AGING) return '';
+  const cls=r.AGING.includes('1 a 30')?'badge-aging-1':r.AGING.includes('31')?'badge-aging-2':r.AGING.includes('61')?'badge-aging-3':'badge-aging-4';
+  const lbl=r.AGING.includes('1 a 30')?'1-30d':r.AGING.includes('31')?'31-60d':r.AGING.includes('61')?'61-90d':'90+d';
+  return `<span class="badge ${cls}">${lbl}</span>`;
+}
+
+function renderTable(){
+  const sorted=[...filtered].sort((a,b)=>{
+    let va=a[sortCol],vb=b[sortCol];
+    if(typeof va==='number') return (va-vb)*sortDir;
+    return String(va).localeCompare(String(vb),'pt-BR')*sortDir;
+  });
+  const total=sorted.length;
+  const start=(currentPage-1)*pageSize;
+  const page=sorted.slice(start,start+pageSize);
+  const tb=document.getElementById('tbodyReg');
+  tb.innerHTML='';
+  
+  page.forEach(r=>{
+    const isV=r.STATUS_VENCIMENTO==='Vencido';
+    const badge=isV?'<span class="badge badge-v">VENCIDO</span>':'<span class="badge badge-a">EM ABERTO</span>';
+    tb.innerHTML+=`<tr class="${isV?'vencido':''}">
+      <td>${badge}</td>
+      <td>${agingBadge(r)}</td>
+      <td style="font-size:11px;max-width:160px;white-space:normal">${r.NOME_FANTASIA}</td>
+      <td style="font-size:11px;max-width:200px;white-space:normal">${r.AGENTE}</td>
+      <td>${r.VENCIMENTO}</td>
+      <td>${r.TIPO_DOC}</td>
+      <td>${r.FORMA_PAGAMENTO}</td>
+      <td style="text-align:right">${fmt(r.VALOR)}</td>
+      <td style="text-align:right;font-weight:600;color:${isV?COLORS.red:COLORS.blue}">${fmt(r.SALDO_EM_ABERTO)}</td>
+      <td style="text-align:center;color:${r.DIAS_ATRASO>90?COLORS.red:r.DIAS_ATRASO>60?COLORS.orange:r.DIAS_ATRASO>0?COLORS.yellow:COLORS.green}">${r.DIAS_ATRASO>0?r.DIAS_ATRASO+'d':'—'}</td>
+      <td style="font-size:11px">${r.CLA_DESCRICAO}</td>
+    </tr>`;
+  });
+  document.getElementById('filterCount').textContent = total+' registros encontrados';
+  document.getElementById('pageInfo').textContent = `Pág. ${currentPage} de ${Math.ceil(total/pageSize) || 1}`;
+  document.getElementById('btnPrev').disabled=currentPage===1;
+  document.getElementById('btnNext').disabled=currentPage>=Math.ceil(total/pageSize);
+}
+
+function changePage(dir){currentPage+=dir;renderTable();}
+
+// Executa a carga inicial ao abrir a página
+window.addEventListener('DOMContentLoaded', carregarDados);
+</script>
 </body>
 </html>
