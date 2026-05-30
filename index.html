@@ -10,7 +10,6 @@
 
 /* ── CONFIGURAÇÃO DE TEMAS AUTOMÁTICOS (LIGHT/DARK) ── */
 :root {
-  /* Padrão: Modo Claro (Light Mode) */
   --bg: #f6f8fa;
   --surface: #ffffff;
   --surface2: #eaeef2;
@@ -30,7 +29,6 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  /* Ativado automaticamente se o computador estiver em Modo Escuro */
   :root {
     --bg: #0d1117;
     --surface: #161b22;
@@ -293,7 +291,6 @@ const getCssVar = name => getComputedStyle(document.documentElement).getProperty
 const fmt = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtK = v => v >= 1000000 ? 'R$ '+(v/1000000).toFixed(1)+'M' : v >= 1000 ? 'R$ '+(v/1000).toFixed(0)+'K' : fmt(v);
 
-// Configuração estática reativa para os textos dos gráficos
 Chart.defaults.color = '#8b949e';
 Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
 
@@ -311,6 +308,7 @@ async function carregarDados() {
         
         if(rawRecords.length === 0) throw new Error('Sem registros.');
 
+        // Força a data de hoje zerada para comparação matemática justa
         const hoje = new Date();
         hoje.setHours(0,0,0,0);
 
@@ -318,11 +316,11 @@ async function carregarDados() {
             let saldo = parseFloat(r.SALDO_EM_ABERTO || r.saldo_em_aberto || 0);
             let valor = parseFloat(r.VALOR || r.valor || 0);
             let vctStr = r.VENCIMENTO || r.vencimento || '';
-            let planilhaStatus = r.STATUS_VENCIMENTO || r.status_vencimento || '';
             
             let diasAtrasoReal = 0;
             let statusCalculado = 'Em aberto';
             
+            // ── CÁLCULO MATEMÁTICO BASEADO NA DATA REAL DO VENCIMENTO ──
             const dataVct = parseDataBr(vctStr);
             if (dataVct) {
                 dataVct.setHours(0,0,0,0);
@@ -331,13 +329,6 @@ async function carregarDados() {
                     diasAtrasoReal = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     statusCalculado = 'Vencido';
                 }
-            }
-
-            // ── DUPLA CAMADA DE VERIFICAÇÃO DE STATUS ──
-            // Se a planilha explicitamente disser "Vencido", prioriza o real da planilha
-            if(planilhaStatus.toLowerCase().trim() === 'vencido') {
-                statusCalculado = 'Vencido';
-                if(diasAtrasoReal === 0) diasAtrasoReal = 1; // Força contagem caso falte sincronia de fuso
             }
 
             let agingLabel = '';
@@ -379,7 +370,6 @@ function compilarMetricasDashboard() {
     let agFilial = {}, agCat = {}, agForn = {}, agMensal = {};
     let agingFaixas = { '1 a 30 dias': { val: 0, qtd: 0 }, '31 a 60 dias': { val: 0, qtd: 0 }, '61 a 90 dias': { val: 0, qtd: 0 }, '90+ dias': { val: 0, qtd: 0 } };
 
-    // ── CALCULAR EXATAMENTE O PRÓXIMO MÊS COMERCIAL (FLUXO +1) ──
     const hoje = new Date();
     const anoAtual = hoje.getFullYear();
     const mesAtual = hoje.getMonth(); 
@@ -477,7 +467,6 @@ function renderizarKPIs() {
 }
 
 function renderizarGraficos() {
-    // Cores absolutas para evitar conflito com carregamentos assíncronos de CSS
     const red = '#cf222e', blue = '#0969da', borderGrid = 'rgba(128,128,128,0.15)';
     const palette = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364'];
 
