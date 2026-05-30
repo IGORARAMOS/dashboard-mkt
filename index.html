@@ -51,7 +51,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .kpi-sub{font-size:11px;color:var(--muted);margin-top:5px}
 /* ── CHARTS GRID ── */
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-.charts-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
 .card-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .card-title span{color:var(--accent)}
@@ -78,7 +77,7 @@ tbody tr.vencido:hover{background:#2a1414}
 td{padding:9px 12px;white-space:nowrap}
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.4px}
 .badge-v{background:var(--red-s);color:var(--red);border:1px solid var(--red-m)}
-.badge-a{background:var(--green-s);color:var(--green)}
+.badge-a">background:var(--green-s);color:var(--green)}
 .badge-aging-1{background:#3d1a1a;color:#f85149}
 .badge-aging-2{background:#2d2005;color:#d29922}
 .badge-aging-3{background:#1a1a0a;color:#e3b341}
@@ -94,11 +93,6 @@ td{padding:9px 12px;white-space:nowrap}
 .pagination button:hover{border-color:var(--accent);color:var(--accent)}
 .pagination button:disabled{opacity:.3;cursor:default}
 .pagination span{font-size:12px;color:var(--muted)}
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 /* ── ALERT STRIP ── */
 .alert{background:linear-gradient(90deg,#3d1a1a,#1e0f0f);border:1px solid var(--red-m);border-radius:8px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:13px}
 .alert-icon{font-size:18px}
@@ -106,23 +100,21 @@ td{padding:9px 12px;white-space:nowrap}
 #loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999}
 .spinner{width:40px;height:40px;border:4px solid var(--surface2);border-top:4px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:15px}
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-/* ── RESPONSIVE ── */
-@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.charts-row,.charts-row-3{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
 <div id="loading-screen">
   <div class="spinner"></div>
-  <p style="color:var(--muted); font-size:16px;">Processando dados financeiros em tempo real...</p>
+  <p style="color:var(--muted); font-size:16px;">Calculando atrasos pelo calendário real...</p>
 </div>
 
 <div class="header">
   <div class="header-left">
     <h1>📊 Dashboard · Contas a Pagar em Aberto · MKT</h1>
-    <p>INC Empreendimentos — Juiz de Fora · Uberlândia · Uberaba · São João del-Rei · São José do Rio Preto · São José dos Campos</p>
+    <p>INC Empreendimentos — Análise Estratégica Real-Time</p>
   </div>
-  <span class="badge-ref">Referência: Processamento Cliente-Side</span>
+  <span class="badge-ref" id="dataAtualizacao">Carregando ref...</span>
 </div>
 
 <nav class="nav">
@@ -139,7 +131,7 @@ td{padding:9px 12px;white-space:nowrap}
 
   <div class="charts-row">
     <div class="card">
-      <div class="card-title"><span>⚠</span> Aging — Vencidos por Faixa</div>
+      <div class="card-title"><span>⚠</span> Aging — Vencidos por Faixa Dinâmica</div>
       <div style="position:relative;height:220px"><canvas id="chartAging"></canvas></div>
     </div>
     <div class="card">
@@ -171,8 +163,8 @@ td{padding:9px 12px;white-space:nowrap}
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>Fornecedor</th><th>Status</th><th>Filial Principal</th><th>Categoria Principal</th>
-          <th>Parcelas</th><th>Max Dias Atraso</th><th>Saldo em Aberto</th>
+          <th>Fornecedor</th><th>Status</th><th>Filial Principal</th><th>Categoria</th>
+          <th>Parcelas</th><th>Atraso Real</th><th>Saldo em Aberto</th>
         </tr></thead>
         <tbody id="tbodyForn"></tbody>
       </table>
@@ -203,7 +195,7 @@ td{padding:9px 12px;white-space:nowrap}
       <div style="position:relative;height:320px"><canvas id="chartPie"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title"><span>📊</span> Vencido vs. A Vencer por Categoria</div>
+      <div class="card-title"><span>📊</span> Vencido vs. A Vencer</div>
       <div style="position:relative;height:320px"><canvas id="chartCatStack"></canvas></div>
     </div>
   </div>
@@ -211,7 +203,7 @@ td{padding:9px 12px;white-space:nowrap}
     <div class="card-title"><span>📋</span> Detalhe por Categoria</div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Categoria (CLA)</th><th>Vencido (R$)</th><th>A Vencer (R$)</th><th>Total (R$)</th><th>% do Total</th><th>Participação</th></tr></thead>
+        <thead><tr><th>Categoria (CLA)</th><th>Vencido (R$)</th><th>A Vencer (R$)</th><th>Total (R$)</th><th>Participação</th></tr></thead>
         <tbody id="tbodyCat"></tbody>
       </table>
     </div>
@@ -220,23 +212,19 @@ td{padding:9px 12px;white-space:nowrap}
 
 <div id="registros" class="page">
   <div class="filters">
-    <input type="text" id="fSearch" placeholder="🔍  Buscar fornecedor, filial, categoria..." oninput="applyFilters()">
+    <input type="text" id="fSearch" placeholder="🔍 Buscar fornecedor, filial..." oninput="applyFilters()">
     <select id="fStatus" onchange="applyFilters()">
       <option value="">Todos os status</option>
       <option value="Vencido">🔴 Vencido</option>
       <option value="Em aberto">🟢 Em aberto</option>
     </select>
-    <select id="fFilial" onchange="applyFilters()">
-      <option value="">Todas as filiais</option>
-    </select>
-    <select id="fCat" onchange="applyFilters()">
-      <option value="">Todas as categorias</option>
-    </select>
+    <select id="fFilial" onchange="applyFilters()"><option value="">Todas as filiais</option></select>
+    <select id="fCat" onchange="applyFilters()"><option value="">Todas as categorias</option></select>
     <select id="fAging" onchange="applyFilters()">
       <option value="">Todos os agings</option>
-      <option value="1-30 dias">1–30 dias</option>
-      <option value="31-60 dias">31–60 dias</option>
-      <option value="61-90 dias">61–90 dias</option>
+      <option value="1 a 30 dias">1–30 dias</option>
+      <option value="31 a 60 dias">31–60 dias</option>
+      <option value="61 a 90 dias">61–90 dias</option>
       <option value="90+ dias">90+ dias</option>
     </select>
     <button class="btn-clear" onclick="clearFilters()">✕ Limpar</button>
@@ -250,11 +238,9 @@ td{padding:9px 12px;white-space:nowrap}
         <th onclick="sortTable('NOME_FANTASIA', event)">Filial</th>
         <th onclick="sortTable('AGENTE', event)">Fornecedor</th>
         <th onclick="sortTable('VENCIMENTO', event)">Vencimento</th>
-        <th onclick="sortTable('TIPO_DOC', event)">Tipo Doc</th>
-        <th onclick="sortTable('FORMA_PAGAMENTO', event)">Forma Pgto</th>
         <th onclick="sortTable('VALOR', event)">Valor (R$)</th>
         <th onclick="sortTable('SALDO_EM_ABERTO', event)">Saldo (R$)</th>
-        <th onclick="sortTable('DIAS_ATRASO', event)">Dias Atraso</th>
+        <th onclick="sortTable('DIAS_ATRASO', event)">Atraso Real</th>
         <th onclick="sortTable('CLA_DESCRICAO', event)">Categoria</th>
       </tr></thead>
       <tbody id="tbodyReg"></tbody>
@@ -270,10 +256,9 @@ td{padding:9px 12px;white-space:nowrap}
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbw3PRhwQRz5TtHqmlz_UWUwWAam4onXPD_ZlI66zV0vkO6XlogjA1N0ELDnw-qRGt1R/exec';
 
-// Estruturas de dados globais unificadas
 let DATA = { registros: [], kpis: {}, aging: [], mensal: [], filial: [], categoria: [], fornecedores: [] };
 let filtered = [];
-let sortCol = 'SALDO_EM_ABERTO', sortDir = -1;
+let sortCol = 'DIAS_ATRASO', sortDir = -1; 
 let currentPage = 1;
 const pageSize = 30;
 
@@ -281,69 +266,89 @@ const fmt = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR',{minimumFractionD
 const fmtK = v => v >= 1000000 ? 'R$ '+(v/1000000).toFixed(1)+'M' : v >= 1000 ? 'R$ '+(v/1000).toFixed(0)+'K' : fmt(v);
 
 const COLORS = {red:'#f85149',orange:'#d29922',yellow:'#e3b341',darkred:'#c0392b',green:'#3fb950',blue:'#58a6ff',purple:'#bc8cff'};
-const PALETTE = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364','#d2a8ff','#e3b341','#ff7b72'];
+const PALETTE = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364','#d2a8ff','#e3b341'];
 
 Chart.defaults.color = '#8b949e';
 Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
-Chart.defaults.font.size = 11;
+
+// Auxiliar para converter DD/MM/AAAA em Objeto Date Real
+function parseDataBr(str) {
+    if(!str || !str.includes('/')) return null;
+    const p = str.split('/');
+    return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
+}
 
 async function carregarDados() {
     try {
         const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Erro ao buscar dados da planilha');
         const resData = await response.json();
-        
-        // Se a resposta vier envolvida em um objeto "registros" ou for a própria Array direta
         let rawRecords = Array.isArray(resData) ? resData : (resData.registros || []);
         
-        if(rawRecords.length === 0) throw new Error('Nenhum registro encontrado.');
+        if(rawRecords.length === 0) throw new Error('Nenhum registro retornado.');
 
-        // 1. Sanatização básica e criação da propriedade AGING em tempo real com base nos dias de atraso
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+
+        // 1. Processamento e recalculo com base no calendário real
         DATA.registros = rawRecords.map(r => {
             let saldo = parseFloat(r.SALDO_EM_ABERTO || r.saldo_em_aberto || 0);
             let valor = parseFloat(r.VALOR || r.valor || 0);
-            let dias = parseInt(r.DIAS_ATRASO || r.dias_atraso || 0);
-            let status = r.STATUS_VENCIMENTO || r.status_vencimento || (dias > 0 ? 'Vencido' : 'Em aberto');
+            let vctStr = r.VENCIMENTO || r.vencimento || '';
             
+            // Cálculo dos dias reais de atraso usando Timestamps
+            let diasAtrasoReal = 0;
+            let statusCalculado = r.STATUS_VENCIMENTO || 'Em aberto';
+            
+            const dataVct = parseDataBr(vctStr);
+            if (dataVct) {
+                dataVct.setHours(0,0,0,0);
+                if (dataVct < hoje) {
+                    const diffTime = Math.abs(hoje - dataVct);
+                    diasAtrasoReal = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    statusCalculado = 'Vencido';
+                } else {
+                    statusCalculado = 'Em aberto';
+                }
+            }
+
             let agingLabel = '';
-            if (status === 'Vencido') {
-                if (dias <= 30) agingLabel = '1 a 30 dias';
-                else if (dias <= 60) agingLabel = '31 a 60 dias';
-                else if (dias <= 90) agingLabel = '61 a 90 dias';
+            if (statusCalculado === 'Vencido') {
+                if (diasAtrasoReal <= 30) agingLabel = '1 a 30 dias';
+                else if (diasAtrasoReal <= 60) agingLabel = '31 a 60 dias';
+                else if (diasAtrasoReal <= 90) agingLabel = '61 a 90 dias';
                 else agingLabel = '90+ dias';
             }
 
             return {
-                STATUS_VENCIMENTO: status,
+                STATUS_VENCIMENTO: statusCalculado,
                 AGING: agingLabel,
                 NOME_FANTASIA: r.NOME_FANTASIA || r.nome_fantasia || 'Sem Filial',
                 AGENTE: r.AGENTE || r.agente || 'Sem Fornecedor',
-                VENCIMENTO: r.VENCIMENTO || r.vencimento || '—',
-                TIPO_DOC: r.TIPO_DOC || r.tipo_doc || '—',
-                FORMA_PAGAMENTO: r.FORMA_PAGAMENTO || r.forma_pagamento || '—',
+                VENCIMENTO: vctStr,
                 VALOR: valor,
                 SALDO_EM_ABERTO: saldo,
-                DIAS_ATRASO: dias,
+                DIAS_ATRASO: diasAtrasoReal,
                 CLA_DESCRICAO: r.CLA_DESCRICAO || r.cla_descricao || 'Outros',
                 CNPJ: r.CNPJ || r.cnpj || ''
             };
         });
 
-        // 2. Compilar métricas e alimentar os arrays de agregação estruturados para os gráficos
-        compilarMetricasDashboard();
+        // Estampar data e hora da última atualização na barra superior
+        const agora = new Date();
+        document.getElementById('dataAtualizacao').textContent = `Atualizado em: ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
 
+        compilarMetricasDashboard();
         document.getElementById('loading-screen').style.display = 'none';
         inicializarDashboard();
 
     } catch (error) {
-        console.error('Erro no processamento dos dados:', error);
-        document.getElementById('loading-screen').innerHTML = `<p style="color:var(--red); font-size:16px;">Falha ao conectar ou processar os dados da planilha. Verifique o console.</p>`;
+        console.error(error);
+        document.getElementById('loading-screen').innerHTML = `<p style="color:var(--red);">Erro ao processar calendário real da planilha.</p>`;
     }
 }
 
 function compilarMetricasDashboard() {
     let total = 0, vencido = 0, a_vencer = 0, qtd_vencido = 0, qtd_aberto = 0;
-    
     let agFilial = {}, agCat = {}, agForn = {}, agMensal = {};
     let agingFaixas = { '1 a 30 dias': { val: 0, qtd: 0 }, '31 a 60 dias': { val: 0, qtd: 0 }, '61 a 90 dias': { val: 0, qtd: 0 }, '90+ dias': { val: 0, qtd: 0 } };
 
@@ -351,7 +356,6 @@ function compilarMetricasDashboard() {
         let v = r.SALDO_EM_ABERTO;
         total += v;
         
-        // KPIs de Status
         if (r.STATUS_VENCIMENTO === 'Vencido') {
             vencido += v;
             qtd_vencido++;
@@ -362,26 +366,23 @@ function compilarMetricasDashboard() {
         } else {
             a_vencer += v;
             qtd_aberto++;
-            
-            // Extração de Mês/Ano simplificada para Projeção
             let partes = r.VENCIMENTO.split('/');
-            let mesAno = partes.length === 3 ? partes[1] + '/' + partes[2] : 'A Vencer';
-            if(!agMensal[mesAno]) agMensal[mesAno] = 0;
-            agMensal[mesAno] += v;
+            let mesAno = partes.length === 3 ? partes[1] + '/' + partes[2] : 'Futuro';
+            agMensal[mesAno] = (agMensal[mesAno] || 0) + v;
         }
 
-        // Agrupamento Filial
+        // Filiais
         if (!agFilial[r.NOME_FANTASIA]) agFilial[r.NOME_FANTASIA] = { vencido: 0, a_vencer: 0, total: 0 };
         agFilial[r.NOME_FANTASIA].total += v;
         if (r.STATUS_VENCIMENTO === 'Vencido') agFilial[r.NOME_FANTASIA].vencido += v;
         else agFilial[r.NOME_FANTASIA].a_vencer += v;
 
-        // Agrupamento Categoria
+        // Categorias
         if (!agCat[r.CLA_DESCRICAO]) agCat[r.CLA_DESCRICAO] = { vencido: 0, total: 0 };
         agCat[r.CLA_DESCRICAO].total += v;
         if (r.STATUS_VENCIMENTO === 'Vencido') agCat[r.CLA_DESCRICAO].vencido += v;
 
-        // Agrupamento Fornecedores
+        // Fornecedores
         if (!agForn[r.AGENTE]) agForn[r.AGENTE] = { saldo: 0, status: 'Em aberto', dias: 0, parcelas: 0, filial: r.NOME_FANTASIA, categoria: r.CLA_DESCRICAO };
         agForn[r.AGENTE].saldo += v;
         agForn[r.AGENTE].parcelas++;
@@ -389,69 +390,41 @@ function compilarMetricasDashboard() {
         if (r.STATUS_VENCIMENTO === 'Vencido') agForn[r.AGENTE].status = 'Vencido';
     });
 
-    // Alimentando DATA.kpis
     DATA.kpis = { total, vencido, a_vencer, total_parcelas: DATA.registros.length, qtd_vencido, qtd_aberto };
-
-    // Alimentando DATA.aging
     DATA.aging = Object.keys(agingFaixas).map(k => ({ faixa: k, valor: agingFaixas[k].val, qtd: agingFaixas[k].qtd }));
-
-    // Alimentando DATA.mensal
     DATA.mensal = Object.keys(agMensal).map(k => ({ mes: k, valor: agMensal[k] })).sort();
-    if(DATA.mensal.length === 0) DATA.mensal = [{ mes: 'Sem lançamentos', valor: 0 }];
-
-    // Alimentando DATA.filial
     DATA.filial = Object.keys(agFilial).map(k => ({ NOME_FANTASIA: k, vencido: agFilial[k].vencido, a_vencer: agFilial[k].a_vencer, total: agFilial[k].total })).sort((a,b)=>b.total - a.total);
-
-    // Alimentando DATA.categoria
     DATA.categoria = Object.keys(agCat).map(k => ({ CLA_DESCRICAO: k, vencido: agCat[k].vencido, total: agCat[k].total })).sort((a,b)=>b.total - a.total);
-
-    // Alimentando DATA.fornecedores
-    DATA.fornecedores = Object.keys(agForn).map(k => {
-        let nCurto = k.split(' ')[0] + (k.split(' ')[1] ? ' ' + k.split(' ')[1] : '');
-        return { AGENTE: k, nome_curto: nCurto.slice(0,18), saldo: agForn[k].saldo, status: agForn[k].status, dias: agForn[k].dias, parcelas: agForn[k].parcelas, filial: agForn[k].filial, categoria: agForn[k].categoria };
-    }).sort((a,b) => b.saldo - a.saldo);
+    DATA.fornecedores = Object.keys(agForn).map(k => ({
+        AGENTE: k, nome_curto: k.slice(0,18), saldo: agForn[k].saldo, status: agForn[k].status, dias: agForn[k].dias, parcelas: agForn[k].parcelas, filial: agForn[k].filial, categoria: agForn[k].categoria
+    })).sort((a,b) => b.saldo - a.saldo);
 }
 
 function inicializarDashboard() {
-    // Evita duplicidade limpando elementos antes de injetar options dinâmicas
     document.getElementById('fFilial').innerHTML = '<option value="">Todas as filiais</option>';
     document.getElementById('fCat').innerHTML = '<option value="">Todas as categorias</option>';
-
-    const filiaisLista = [...new Set(DATA.registros.map(r=>r.NOME_FANTASIA))].sort();
-    filiaisLista.forEach(f=>{document.getElementById('fFilial').innerHTML+=`<option value="${f}">${f}</option>`});
-    const catsLista = [...new Set(DATA.registros.map(r=>r.CLA_DESCRICAO))].sort();
-    catsLista.forEach(c=>{document.getElementById('fCat').innerHTML+=`<option value="${c}">${c}</option>`});
+    
+    [...new Set(DATA.registros.map(r=>r.NOME_FANTASIA))].sort().forEach(f=>{document.getElementById('fFilial').innerHTML+=`<option value="${f}">${f}</option>`});
+    [...new Set(DATA.registros.map(r=>r.CLA_DESCRICAO))].sort().forEach(c=>{document.getElementById('fCat').innerHTML+=`<option value="${c}">${c}</option>`});
 
     renderizarKPIs();
     renderizarGraficos();
     renderizarTabelasEstaticas();
-    
-    // Alerta Condicional Dinâmico (Facebook/Meta)
-    const facebookData = DATA.fornecedores.find(f => f.AGENTE.toUpperCase().includes('FACEBOOK') || f.AGENTE.toUpperCase().includes('META'));
-    const alertBox = document.getElementById('facebookAlert');
-    if (facebookData && facebookData.status === 'Vencido') {
-        alertBox.innerHTML = `<span class="alert-icon">🚨</span><div><strong style="color:var(--red)">${facebookData.AGENTE}: ${fmt(facebookData.saldo)} vencido há ${facebookData.dias} dias.</strong> &nbsp;Ação imediata de contingência recomendada para evitar pausas em anúncios.</div>`;
-        alertBox.style.display = 'flex';
-    } else {
-        alertBox.style.display = 'none';
-    }
-
     applyFilters(); 
 }
 
 function renderizarKPIs() {
     const totalVencidoPct = DATA.kpis.total > 0 ? ((DATA.kpis.vencido / DATA.kpis.total) * 100).toFixed(1) : 0;
     const totalAVencerPct = DATA.kpis.total > 0 ? ((DATA.kpis.a_vencer / DATA.kpis.total) * 100).toFixed(1) : 0;
-    
     const vencidosForn = DATA.fornecedores.filter(f => f.status === 'Vencido');
     const maiorVencido = vencidosForn.length > 0 ? vencidosForn.reduce((max, f) => f.saldo > max.saldo ? f : max, vencidosForn[0]) : null;
 
     const kpiDefs = [
         {label:'Saldo Total em Aberto', value: fmtK(DATA.kpis.total), sub: DATA.kpis.total_parcelas+' parcelas', cls:'blue'},
-        {label:'Total Vencido', value: fmtK(DATA.kpis.vencido), sub: `${DATA.kpis.qtd_vencido} parcelas · ${totalVencidoPct}%`, cls:'red'},
+        {label:'Total Vencido Real', value: fmtK(DATA.kpis.vencido), sub: `${DATA.kpis.qtd_vencido} parcelas · ${totalVencidoPct}%`, cls:'red'},
         {label:'A Vencer', value: fmtK(DATA.kpis.a_vencer), sub: `${DATA.kpis.qtd_aberto} parcelas · ${totalAVencerPct}%`, cls:'green'},
-        {label:'Projeção Próximo Mês', value: DATA.mensal && DATA.mensal.length > 0 ? fmtK(DATA.mensal[0].valor) : 'R$ 0', sub: 'Mapeado a vencer', cls:'orange'},
-        {label:'Maior Alvo Vencido', value: maiorVencido ? fmtK(maiorVencido.saldo) : 'R$ 0', sub: maiorVencido ? maiorVencido.nome_curto : 'Nenhum', cls:'purple'},
+        {label:'Projeção Próximo Mês', value: DATA.mensal.length > 0 ? fmtK(DATA.mensal[0].valor) : 'R$ 0', sub: 'Mapeado no fluxo', cls:'orange'},
+        {label:'Maior Alvo de Atraso', value: maiorVencido ? fmtK(maiorVencido.saldo) : 'R$ 0', sub: maiorVencido ? `${maiorVencido.nome_curto} (${maiorVencido.dias}d)` : 'Nenhum', cls:'purple'},
     ];
     
     const grid = document.getElementById('kpi-grid');
@@ -462,236 +435,138 @@ function renderizarKPIs() {
 }
 
 function renderizarGraficos() {
-    // Aging bar
     new Chart(document.getElementById('chartAging'),{
       type:'bar',
       data:{
-        labels: DATA.aging.map(d=>d.faixa+'  ('+d.qtd+'x)'),
-        datasets:[{
-          label:'Saldo Vencido',
-          data: DATA.aging.map(d=>d.valor),
-          backgroundColor:[COLORS.red,COLORS.orange,COLORS.yellow,COLORS.darkred],
-          borderRadius:5, borderWidth:0
-        }]
+        labels: DATA.aging.map(d=>d.faixa+' ('+d.qtd+'x)'),
+        datasets:[{ label:'Saldo Vencido', data: DATA.aging.map(d=>d.valor), backgroundColor:[COLORS.red,COLORS.orange,COLORS.yellow,COLORS.darkred], borderRadius:5 }]
       },
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},
-        scales:{
-          x:{grid:{color:'#21262d'},ticks:{color:'#8b949e'}},
-          y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}}
-        }
-      }
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#21262d'}},y:{grid:{color:'#21262d'},ticks:{callback:fmtK}}}}
     });
 
-    // Mensal bar
     new Chart(document.getElementById('chartMensal'),{
       type:'bar',
       data:{
         labels: DATA.mensal.map(d=>d.mes),
-        datasets:[{
-          label:'A Vencer',
-          data: DATA.mensal.map(d=>d.valor),
-          backgroundColor: COLORS.blue,
-          borderRadius:5,borderWidth:0
-        }]
+        datasets:[{ label:'A Vencer', data: DATA.mensal.map(d=>d.valor), backgroundColor: COLORS.blue, borderRadius:5 }]
       },
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},
-        scales:{
-          x:{grid:{display:false},ticks:{color:'#8b949e',maxRotation:45,autoSkip:false}},
-          y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}}
-        }
-      }
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#21262d'},ticks:{callback:fmtK}}}}
     });
 
-    // Filial horizontal bar (top 8)
     const top8fil = DATA.filial.slice(0,8);
     new Chart(document.getElementById('chartFilial'),{
       type:'bar',
       data:{
-        labels: top8fil.map(d=>d.NOME_FANTASIA.length>22?d.NOME_FANTASIA.slice(0,22)+'…':d.NOME_FANTASIA),
+        labels: top8fil.map(d=>d.NOME_FANTASIA),
         datasets:[
-          {label:'Vencido', data:top8fil.map(d=>d.vencido), backgroundColor:COLORS.red, borderRadius:3,borderWidth:0},
-          {label:'A Vencer', data:top8fil.map(d=>d.a_vencer), backgroundColor:COLORS.blue, borderRadius:3,borderWidth:0}
+          {label:'Vencido Real', data:top8fil.map(d=>d.vencido), backgroundColor:COLORS.red, borderRadius:3},
+          {label:'A Vencer', data:top8fil.map(d=>d.a_vencer), backgroundColor:COLORS.blue, borderRadius:3}
         ]
       },
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'top',labels:{color:'#8b949e',boxWidth:10,padding:12}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.raw)}}},
-        scales:{
-          x:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK},stacked:false},
-          y:{grid:{display:false},ticks:{color:'#8b949e'}}
-        }
-      }
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:false,grid:{color:'#30363d'}},y:{grid:{display:false}}}}
     });
 
-    // Categoria bar
     const top8cat = DATA.categoria.slice(0,8);
     new Chart(document.getElementById('chartCat'),{
       type:'bar',
       data:{
-        labels: top8cat.map(d=>d.CLA_DESCRICAO.length>20?d.CLA_DESCRICAO.slice(0,20)+'…':d.CLA_DESCRICAO),
-        datasets:[{
-          label:'Saldo',
-          data:top8cat.map(d=>d.total),
-          backgroundColor: PALETTE.slice(0,8),
-          borderRadius:4,borderWidth:0
-        }]
+        labels: top8cat.map(d=>d.CLA_DESCRICAO),
+        datasets:[{ data:top8cat.map(d=>d.total), backgroundColor: PALETTE, borderRadius:4 }]
       },
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},
-        scales:{
-          x:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}},
-          y:{grid:{display:false},ticks:{color:'#8b949e'}}
-        }
-      }
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
     });
 
-    // Fornecedores bar chart (exibe top 20 para fazer jus ao título)
-    const top20forn = DATA.fornecedores.slice(0,20);
     new Chart(document.getElementById('chartForn'),{
       type:'bar',
       data:{
-        labels: top20forn.map(d=>d.nome_curto),
-        datasets:[{
-          label:'Saldo em Aberto',
-          data: top20forn.map(d=>d.saldo),
-          backgroundColor: top20forn.map(d=>d.status==='Vencido'?COLORS.red:COLORS.blue),
-          borderRadius:4,borderWidth:0
-        }]
+        labels: DATA.fornecedores.slice(0,20).map(d=>d.nome_curto),
+        datasets:[{ data: DATA.fornecedores.slice(0,20).map(d=>d.saldo), backgroundColor: DATA.fornecedores.slice(0,20).map(d=>d.status==='Vencido'?COLORS.red:COLORS.blue), borderRadius:4 }]
       },
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)}}},
-        scales:{
-          x:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}},
-          y:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}
-        }
-      }
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
     });
 
-    // Filial stack chart
     new Chart(document.getElementById('chartFilialStack'),{
       type:'bar',
       data:{
-        labels: DATA.filial.map(d=>d.NOME_FANTASIA.length>24?d.NOME_FANTASIA.slice(0,24)+'…':d.NOME_FANTASIA),
+        labels: DATA.filial.map(d=>d.NOME_FANTASIA),
         datasets:[
-          {label:'Vencido', data:DATA.filial.map(d=>d.vencido), backgroundColor:COLORS.red, borderRadius:0,borderWidth:0},
-          {label:'A Vencer', data:DATA.filial.map(d=>d.a_vencer), backgroundColor:COLORS.blue, borderRadius:4,borderWidth:0}
+          {label:'Vencido', data:DATA.filial.map(d=>d.vencido), backgroundColor:COLORS.red},
+          {label:'A Vencer', data:DATA.filial.map(d=>d.a_vencer), backgroundColor:COLORS.blue}
         ]
       },
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'top',labels:{color:'#8b949e',boxWidth:10}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.raw)}}},
-        scales:{
-          x:{stacked:true,grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}},
-          y:{stacked:true,grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}
-        }
-      }
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}}}
     });
 
-    // Pie chart categorias
     new Chart(document.getElementById('chartPie'),{
       type:'doughnut',
       data:{
-        labels: DATA.categoria.map(d=>d.CLA_DESCRICAO.length>22?d.CLA_DESCRICAO.slice(0,22)+'…':d.CLA_DESCRICAO),
+        labels: DATA.categoria.map(d=>d.CLA_DESCRICAO),
         datasets:[{data:DATA.categoria.map(d=>d.total), backgroundColor:PALETTE, borderColor:'#161b22', borderWidth:2}]
       },
-      options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
-        plugins:{legend:{position:'right',labels:{color:'#8b949e',boxWidth:12,padding:8,font:{size:10}}},
-          tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmt(ctx.raw)}}}
-      }
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:10}}}}}
     });
 
-    // Cat stack chart
     new Chart(document.getElementById('chartCatStack'),{
       type:'bar',
       data:{
-        labels: DATA.categoria.map(d=>d.CLA_DESCRICAO.length>18?d.CLA_DESCRICAO.slice(0,18)+'…':d.CLA_DESCRICAO),
+        labels: DATA.categoria.map(d=>d.CLA_DESCRICAO),
         datasets:[
-          {label:'Vencido', data:DATA.categoria.map(d=>d.vencido), backgroundColor:COLORS.red, borderRadius:0,borderWidth:0},
-          {label:'A Vencer', data:DATA.categoria.map(d=>d.total-d.vencido), backgroundColor:COLORS.blue, borderRadius:4,borderWidth:0}
+          {label:'Vencido', data:DATA.categoria.map(d=>d.vencido), backgroundColor:COLORS.red},
+          {label:'A Vencer', data:DATA.categoria.map(d=>d.total-d.vencido), backgroundColor:COLORS.blue}
         ]
       },
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{position:'top',labels:{color:'#8b949e',boxWidth:10}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.raw)}}},
-        scales:{
-          x:{stacked:true,grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:fmtK}},
-          y:{stacked:true,grid:{display:false},ticks:{color:'#8b949e',font:{size:10}}}
-        }
-      }
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}}}
     });
 }
 
 function renderizarTabelasEstaticas() {
-    // Tabela fornecedores
     const tbForn = document.getElementById('tbodyForn');
     tbForn.innerHTML = '';
     DATA.fornecedores.forEach(f=>{
-      const badge = f.status==='Vencido'?'<span class="badge badge-v">VENCIDO</span>':'<span class="badge badge-a">EM ABERTO</span>';
-      const dias = f.dias>0?`<span style="color:${f.dias>90?COLORS.red:f.dias>60?COLORS.orange:COLORS.yellow}">${f.dias}d</span>`:'—';
+      const badge = f.status==='Vencido'?` <span class="badge badge-v">VENCIDO</span>`:` <span class="badge badge-a">EM ABERTO</span>`;
       tbForn.innerHTML+=`<tr class="${f.status==='Vencido'?'vencido':''}">
-        <td style="max-width:220px;white-space:normal">${f.AGENTE}</td>
-        <td>${badge}</td>
-        <td style="max-width:150px;white-space:normal;font-size:11px">${f.filial}</td>
-        <td style="font-size:11px">${f.categoria}</td>
+        <td>${f.AGENTE}</td><td>${badge}</td><td>${f.filial}</td><td>${f.categoria}</td>
         <td style="text-align:center">${f.parcelas}</td>
-        <td style="text-align:center">${dias}</td>
+        <td style="text-align:center;font-weight:700;color:${f.dias>0?COLORS.red:COLORS.green}">${f.dias>0?f.dias+' dias':'—'}</td>
         <td style="text-align:right;font-weight:600;color:${f.status==='Vencido'?COLORS.red:COLORS.blue}">${fmt(f.saldo)}</td>
       </tr>`;
     });
 
-    // Tabela filial
     const tbFilial = document.getElementById('tbodyFilial');
     tbFilial.innerHTML = '';
-    DATA.filial.forEach((f,i)=>{
+    DATA.filial.forEach(f=>{
       const pct = f.total > 0 ? (f.vencido/f.total*100).toFixed(1) : 0;
       tbFilial.innerHTML+=`<tr>
-        <td>${f.NOME_FANTASIA}</td>
-        <td style="text-align:right;color:${COLORS.red};font-weight:600">${fmt(f.vencido)}</td>
-        <td style="text-align:right;color:${COLORS.blue}">${fmt(f.a_vencer)}</td>
+        <td>${f.NOME_FANTASIA}</td><td style="text-align:right;color:${COLORS.red}">${fmt(f.vencido)}</td><td style="text-align:right;color:${COLORS.blue}">${fmt(f.a_vencer)}</td>
         <td style="text-align:right;font-weight:700">${fmt(f.total)}</td>
-        <td style="min-width:140px">
+        <td>
           <div class="pbar-wrap">
-            <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:${parseFloat(pct)>70?COLORS.red:COLORS.orange}"></div></div>
+            <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:${parseFloat(pct)>50?COLORS.red:COLORS.orange}"></div></div>
             <span class="pbar-label">${pct}%</span>
           </div>
         </td>
       </tr>`;
     });
 
-    // Tabela categorias
     const tbCat = document.getElementById('tbodyCat');
     tbCat.innerHTML = '';
     DATA.categoria.forEach(c=>{
       const pct = DATA.kpis.total > 0 ? (c.total/DATA.kpis.total*100).toFixed(1) : 0;
-      const av = c.total - c.vencido;
       tbCat.innerHTML+=`<tr>
-        <td>${c.CLA_DESCRICAO}</td>
-        <td style="text-align:right;color:${COLORS.red}">${fmt(c.vencido)}</td>
-        <td style="text-align:right;color:${COLORS.blue}">${fmt(av)}</td>
-        <td style="text-align:right;font-weight:700">${fmt(c.total)}</td>
-        <td style="text-align:center">${pct}%</td>
-        <td style="min-width:120px">
-          <div class="pbar-wrap">
-            <div class="pbar"><div class="pbar-fill" style="width:${Math.min(pct*3,100)}%;background:${PALETTE[0]}"></div></div>
-          </div>
-        </td>
+        <td>${c.CLA_DESCRICAO}</td><td style="text-align:right;color:${COLORS.red}">${fmt(c.vencido)}</td><td style="text-align:right;color:${COLORS.blue}">${fmt(c.total-c.vencido)}</td>
+        <td style="text-align:right;font-weight:700">${fmt(c.total)}</td><td style="text-align:center">${pct}%</td>
       </tr>`;
     });
 }
 
-// ── NAV CONTROLLER ──
 function showPage(id, event){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if(event && event.target) {
-    event.target.classList.add('active');
-  }
+  if(event) event.target.classList.add('active');
 }
 
-// ── REGISTROS FILTRÁVEIS (Aba de pesquisas) ──
 function applyFilters(){
-  if (!DATA.registros) return;
-  
   const s = document.getElementById('fSearch').value.toLowerCase();
   const st = document.getElementById('fStatus').value;
   const fi = document.getElementById('fFilial').value;
@@ -699,16 +574,11 @@ function applyFilters(){
   const ag = document.getElementById('fAging').value;
   
   filtered = DATA.registros.filter(r=>{
-    if(s && !r.AGENTE.toLowerCase().includes(s) && !r.NOME_FANTASIA.toLowerCase().includes(s) && !r.CLA_DESCRICAO.toLowerCase().includes(s) && !r.CNPJ.toLowerCase().includes(s)) return false;
+    if(s && !r.AGENTE.toLowerCase().includes(s) && !r.NOME_FANTASIA.toLowerCase().includes(s)) return false;
     if(st && r.STATUS_VENCIMENTO!==st) return false;
     if(fi && r.NOME_FANTASIA!==fi) return false;
     if(ca && r.CLA_DESCRICAO!==ca) return false;
-    if(ag){
-      if(ag==='1-30 dias' && !(r.DIAS_ATRASO>=1&&r.DIAS_ATRASO<=30)) return false;
-      if(ag==='31-60 dias' && !(r.DIAS_ATRASO>=31&&r.DIAS_ATRASO<=60)) return false;
-      if(ag==='61-90 dias' && !(r.DIAS_ATRASO>=61&&r.DIAS_ATRASO<=90)) return false;
-      if(ag==='90+ dias' && r.DIAS_ATRASO<=90) return false;
-    }
+    if(ag && r.AGING!==ag) return false;
     return true;
   });
   currentPage=1;
@@ -716,35 +586,21 @@ function applyFilters(){
 }
 
 function clearFilters(){
-  ['fSearch','fStatus','fFilial','fCat','fAging'].forEach(id=>{
-    document.getElementById(id).value='';
-  });
+  ['fSearch','fStatus','fFilial','fCat','fAging'].forEach(id=>{document.getElementById(id).value=''});
   applyFilters();
 }
 
 function sortTable(col, event){
   if(sortCol===col) sortDir*=-1; else {sortCol=col;sortDir=-1;}
-  document.querySelectorAll('thead th').forEach(th=>{th.classList.remove('sort-asc','sort-desc')});
-  if(event && event.target) {
-    event.target.classList.add(sortDir===1?'sort-asc':'sort-desc');
-  }
   renderTable();
-}
-
-function agingBadge(r){
-  if(r.STATUS_VENCIMENTO!=='Vencido'||!r.AGING) return '';
-  const cls=r.AGING.includes('1 a 30')?'badge-aging-1':r.AGING.includes('31')?'badge-aging-2':r.AGING.includes('61')?'badge-aging-3':'badge-aging-4';
-  const lbl=r.AGING.includes('1 a 30')?'1-30d':r.AGING.includes('31')?'31-60d':r.AGING.includes('61')?'61-90d':'90+d';
-  return `<span class="badge ${cls}">${lbl}</span>`;
 }
 
 function renderTable(){
   const sorted=[...filtered].sort((a,b)=>{
     let va=a[sortCol],vb=b[sortCol];
-    if(typeof va==='number') return (va-vb)*sortDir;
-    return String(va).localeCompare(String(vb),'pt-BR')*sortDir;
+    return (va>vb?1:va<vb?-1:0)*sortDir;
   });
-  const total=sorted.length;
+  
   const start=(currentPage-1)*pageSize;
   const page=sorted.slice(start,start+pageSize);
   const tb=document.getElementById('tbodyReg');
@@ -752,25 +608,21 @@ function renderTable(){
   
   page.forEach(r=>{
     const isV=r.STATUS_VENCIMENTO==='Vencido';
-    const badge=isV?'<span class="badge badge-v">VENCIDO</span>':'<span class="badge badge-a">EM ABERTO</span>';
     tb.innerHTML+=`<tr class="${isV?'vencido':''}">
-      <td>${badge}</td>
-      <td>${agingBadge(r)}</td>
-      <td style="font-size:11px;max-width:160px;white-space:normal">${r.NOME_FANTASIA}</td>
-      <td style="font-size:11px;max-width:200px;white-space:normal">${r.AGENTE}</td>
-      <td>${r.VENCIMENTO}</td>
-      <td>${r.TIPO_DOC}</td>
-      <td>${r.FORMA_PAGAMENTO}</td>
+      <td>${isV?'<span class="badge badge-v">VENCIDO</span>':'<span class="badge badge-a">EM ABERTO</span>'}</td>
+      <td><span class="badge badge-aging-1">${r.AGING || '👉 Fluxo'}</span></td>
+      <td>${r.NOME_FANTASIA}</td><td>${r.AGENTE}</td><td>${r.VENCIMENTO}</td>
       <td style="text-align:right">${fmt(r.VALOR)}</td>
       <td style="text-align:right;font-weight:600;color:${isV?COLORS.red:COLORS.blue}">${fmt(r.SALDO_EM_ABERTO)}</td>
-      <td style="text-align:center;color:${r.DIAS_ATRASO>90?COLORS.red:r.DIAS_ATRASO>60?COLORS.orange:r.DIAS_ATRASO>0?COLORS.yellow:COLORS.green}">${r.DIAS_ATRASO>0?r.DIAS_ATRASO+'d':'—'}</td>
-      <td style="font-size:11px">${r.CLA_DESCRICAO}</td>
+      <td style="text-align:center;font-weight:700;color:${isV?COLORS.red:COLORS.green}">${r.DIAS_ATRASO>0?r.DIAS_ATRASO+' dias':'—'}</td>
+      <td>${r.CLA_DESCRICAO}</td>
     </tr>`;
   });
-  document.getElementById('filterCount').textContent = total+' registros encontrados';
-  document.getElementById('pageInfo').textContent = `Pág. ${currentPage} de ${Math.ceil(total/pageSize) || 1}`;
+  
+  document.getElementById('filterCount').textContent = sorted.length+' itens';
+  document.getElementById('pageInfo').textContent = `Pág. ${currentPage} de ${Math.ceil(sorted.length/pageSize) || 1}`;
   document.getElementById('btnPrev').disabled=currentPage===1;
-  document.getElementById('btnNext').disabled=currentPage>=Math.ceil(total/pageSize);
+  document.getElementById('btnNext').disabled=currentPage>=Math.ceil(sorted.length/pageSize);
 }
 
 function changePage(dir){currentPage+=dir;renderTable();}
