@@ -114,7 +114,7 @@ td{padding:9px 12px;white-space:nowrap}
 
 <div id="loading-screen">
   <div class="spinner"></div>
-  <p style="color:var(--muted); font-size:16px;">Carregando dados em tempo real da planilha...</p>
+  <p style="color:var(--muted); font-size:16px;">Processando dados financeiros em tempo real...</p>
 </div>
 
 <div class="header">
@@ -122,7 +122,7 @@ td{padding:9px 12px;white-space:nowrap}
     <h1>📊 Dashboard · Contas a Pagar em Aberto · MKT</h1>
     <p>INC Empreendimentos — Juiz de Fora · Uberlândia · Uberaba · São João del-Rei · São José do Rio Preto · São José dos Campos</p>
   </div>
-  <span class="badge-ref">Referência: Atualizado via API</span>
+  <span class="badge-ref">Referência: Processamento Cliente-Side</span>
 </div>
 
 <nav class="nav">
@@ -134,12 +134,7 @@ td{padding:9px 12px;white-space:nowrap}
 </nav>
 
 <div id="visao-geral" class="page active">
-
-  <div class="alert" id="facebookAlert" style="display:none;">
-    <span class="alert-icon">🚨</span>
-    <div><strong style="color:var(--red)">Atenção:</strong> Há pendências críticas de alto valor aguardando revisão. Verifique os prazos e ações recomendadas.</div>
-  </div>
-
+  <div class="alert" id="facebookAlert" style="display:none;"></div>
   <div class="kpi-grid" id="kpi-grid"></div>
 
   <div class="charts-row">
@@ -163,7 +158,6 @@ td{padding:9px 12px;white-space:nowrap}
       <div style="position:relative;height:260px"><canvas id="chartCat"></canvas></div>
     </div>
   </div>
-
 </div>
 
 <div id="fornecedores" class="page">
@@ -177,8 +171,8 @@ td{padding:9px 12px;white-space:nowrap}
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>Fornecedor</th><th>Status</th><th>Filial</th><th>Categoria</th>
-          <th>Parcelas</th><th>Dias Atraso</th><th>Saldo em Aberto</th>
+          <th>Fornecedor</th><th>Status</th><th>Filial Principal</th><th>Categoria Principal</th>
+          <th>Parcelas</th><th>Max Dias Atraso</th><th>Saldo em Aberto</th>
         </tr></thead>
         <tbody id="tbodyForn"></tbody>
       </table>
@@ -226,7 +220,7 @@ td{padding:9px 12px;white-space:nowrap}
 
 <div id="registros" class="page">
   <div class="filters">
-    <input type="text" id="fSearch" placeholder="🔍  Buscar fornecedor, filial, categoria..." oninput="applyFilters()">
+    <input type="text" id="fSearch" placeholder="🔍  Buscar fornecedor, filial, categoria..." oninput="applyFilters()">
     <select id="fStatus" onchange="applyFilters()">
       <option value="">Todos os status</option>
       <option value="Vencido">🔴 Vencido</option>
@@ -275,7 +269,9 @@ td{padding:9px 12px;white-space:nowrap}
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbw3PRhwQRz5TtHqmlz_UWUwWAam4onXPD_ZlI66zV0vkO6XlogjA1N0ELDnw-qRGt1R/exec';
-let DATA = {};
+
+// Estruturas de dados globais unificadas
+let DATA = { registros: [], kpis: {}, aging: [], mensal: [], filial: [], categoria: [], fornecedores: [] };
 let filtered = [];
 let sortCol = 'SALDO_EM_ABERTO', sortDir = -1;
 let currentPage = 1;
@@ -287,57 +283,166 @@ const fmtK = v => v >= 1000000 ? 'R$ '+(v/1000000).toFixed(1)+'M' : v >= 1000 ? 
 const COLORS = {red:'#f85149',orange:'#d29922',yellow:'#e3b341',darkred:'#c0392b',green:'#3fb950',blue:'#58a6ff',purple:'#bc8cff'};
 const PALETTE = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364','#d2a8ff','#e3b341','#ff7b72'];
 
-// Configuração padrão do Chart.js
 Chart.defaults.color = '#8b949e';
 Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
 Chart.defaults.font.size = 11;
 
-// Função principal de conexão
 async function carregarDados() {
     try {
         const response = await fetch(API_URL);
         if (!response.ok) throw new Error('Erro ao buscar dados da planilha');
-        DATA = await response.json();
+        const resData = await response.json();
         
-        // Esconde a tela de carregamento
+        // Se a resposta vier envolvida em um objeto "registros" ou for a própria Array direta
+        let rawRecords = Array.isArray(resData) ? resData : (resData.registros || []);
+        
+        if(rawRecords.length === 0) throw new Error('Nenhum registro encontrado.');
+
+        // 1. Sanatização básica e criação da propriedade AGING em tempo real com base nos dias de atraso
+        DATA.registros = rawRecords.map(r => {
+            let saldo = parseFloat(r.SALDO_EM_ABERTO || r.saldo_em_aberto || 0);
+            let valor = parseFloat(r.VALOR || r.valor || 0);
+            let dias = parseInt(r.DIAS_ATRASO || r.dias_atraso || 0);
+            let status = r.STATUS_VENCIMENTO || r.status_vencimento || (dias > 0 ? 'Vencido' : 'Em aberto');
+            
+            let agingLabel = '';
+            if (status === 'Vencido') {
+                if (dias <= 30) agingLabel = '1 a 30 dias';
+                else if (dias <= 60) agingLabel = '31 a 60 dias';
+                else if (dias <= 90) agingLabel = '61 a 90 dias';
+                else agingLabel = '90+ dias';
+            }
+
+            return {
+                STATUS_VENCIMENTO: status,
+                AGING: agingLabel,
+                NOME_FANTASIA: r.NOME_FANTASIA || r.nome_fantasia || 'Sem Filial',
+                AGENTE: r.AGENTE || r.agente || 'Sem Fornecedor',
+                VENCIMENTO: r.VENCIMENTO || r.vencimento || '—',
+                TIPO_DOC: r.TIPO_DOC || r.tipo_doc || '—',
+                FORMA_PAGAMENTO: r.FORMA_PAGAMENTO || r.forma_pagamento || '—',
+                VALOR: valor,
+                SALDO_EM_ABERTO: saldo,
+                DIAS_ATRASO: dias,
+                CLA_DESCRICAO: r.CLA_DESCRICAO || r.cla_descricao || 'Outros',
+                CNPJ: r.CNPJ || r.cnpj || ''
+            };
+        });
+
+        // 2. Compilar métricas e alimentar os arrays de agregação estruturados para os gráficos
+        compilarMetricasDashboard();
+
         document.getElementById('loading-screen').style.display = 'none';
-        
-        // Inicializa o Dashboard
         inicializarDashboard();
+
     } catch (error) {
-        console.error('Ops! Algo deu errado ao carregar os dados:', error);
-        document.getElementById('loading-screen').innerHTML = `<p style="color:var(--red); font-size:16px;">Falha ao conectar com o Google Sheets. Verifique o Apps Script.</p>`;
+        console.error('Erro no processamento dos dados:', error);
+        document.getElementById('loading-screen').innerHTML = `<p style="color:var(--red); font-size:16px;">Falha ao conectar ou processar os dados da planilha. Verifique o console.</p>`;
     }
 }
 
+function compilarMetricasDashboard() {
+    let total = 0, vencido = 0, a_vencer = 0, qtd_vencido = 0, qtd_aberto = 0;
+    
+    let agFilial = {}, agCat = {}, agForn = {}, agMensal = {};
+    let agingFaixas = { '1 a 30 dias': { val: 0, qtd: 0 }, '31 a 60 dias': { val: 0, qtd: 0 }, '61 a 90 dias': { val: 0, qtd: 0 }, '90+ dias': { val: 0, qtd: 0 } };
+
+    DATA.registros.forEach(r => {
+        let v = r.SALDO_EM_ABERTO;
+        total += v;
+        
+        // KPIs de Status
+        if (r.STATUS_VENCIMENTO === 'Vencido') {
+            vencido += v;
+            qtd_vencido++;
+            if (agingFaixas[r.AGING]) {
+                agingFaixas[r.AGING].val += v;
+                agingFaixas[r.AGING].qtd++;
+            }
+        } else {
+            a_vencer += v;
+            qtd_aberto++;
+            
+            // Extração de Mês/Ano simplificada para Projeção
+            let partes = r.VENCIMENTO.split('/');
+            let mesAno = partes.length === 3 ? partes[1] + '/' + partes[2] : 'A Vencer';
+            if(!agMensal[mesAno]) agMensal[mesAno] = 0;
+            agMensal[mesAno] += v;
+        }
+
+        // Agrupamento Filial
+        if (!agFilial[r.NOME_FANTASIA]) agFilial[r.NOME_FANTASIA] = { vencido: 0, a_vencer: 0, total: 0 };
+        agFilial[r.NOME_FANTASIA].total += v;
+        if (r.STATUS_VENCIMENTO === 'Vencido') agFilial[r.NOME_FANTASIA].vencido += v;
+        else agFilial[r.NOME_FANTASIA].a_vencer += v;
+
+        // Agrupamento Categoria
+        if (!agCat[r.CLA_DESCRICAO]) agCat[r.CLA_DESCRICAO] = { vencido: 0, total: 0 };
+        agCat[r.CLA_DESCRICAO].total += v;
+        if (r.STATUS_VENCIMENTO === 'Vencido') agCat[r.CLA_DESCRICAO].vencido += v;
+
+        // Agrupamento Fornecedores
+        if (!agForn[r.AGENTE]) agForn[r.AGENTE] = { saldo: 0, status: 'Em aberto', dias: 0, parcelas: 0, filial: r.NOME_FANTASIA, categoria: r.CLA_DESCRICAO };
+        agForn[r.AGENTE].saldo += v;
+        agForn[r.AGENTE].parcelas++;
+        if (r.DIAS_ATRASO > agForn[r.AGENTE].dias) agForn[r.AGENTE].dias = r.DIAS_ATRASO;
+        if (r.STATUS_VENCIMENTO === 'Vencido') agForn[r.AGENTE].status = 'Vencido';
+    });
+
+    // Alimentando DATA.kpis
+    DATA.kpis = { total, vencido, a_vencer, total_parcelas: DATA.registros.length, qtd_vencido, qtd_aberto };
+
+    // Alimentando DATA.aging
+    DATA.aging = Object.keys(agingFaixas).map(k => ({ faixa: k, valor: agingFaixas[k].val, qtd: agingFaixas[k].qtd }));
+
+    // Alimentando DATA.mensal
+    DATA.mensal = Object.keys(agMensal).map(k => ({ mes: k, valor: agMensal[k] })).sort();
+    if(DATA.mensal.length === 0) DATA.mensal = [{ mes: 'Sem lançamentos', valor: 0 }];
+
+    // Alimentando DATA.filial
+    DATA.filial = Object.keys(agFilial).map(k => ({ NOME_FANTASIA: k, vencido: agFilial[k].vencido, a_vencer: agFilial[k].a_vencer, total: agFilial[k].total })).sort((a,b)=>b.total - a.total);
+
+    // Alimentando DATA.categoria
+    DATA.categoria = Object.keys(agCat).map(k => ({ CLA_DESCRICAO: k, vencido: agCat[k].vencido, total: agCat[k].total })).sort((a,b)=>b.total - a.total);
+
+    // Alimentando DATA.fornecedores
+    DATA.fornecedores = Object.keys(agForn).map(k => {
+        let nCurto = k.split(' ')[0] + (k.split(' ')[1] ? ' ' + k.split(' ')[1] : '');
+        return { AGENTE: k, nome_curto: nCurto.slice(0,18), saldo: agForn[k].saldo, status: agForn[k].status, dias: agForn[k].dias, parcelas: agForn[k].parcelas, filial: agForn[k].filial, categoria: agForn[k].categoria };
+    }).sort((a,b) => b.saldo - a.saldo);
+}
+
 function inicializarDashboard() {
-    // Configura os Filtros Select Dinâmicos
+    // Evita duplicidade limpando elementos antes de injetar options dinâmicas
+    document.getElementById('fFilial').innerHTML = '<option value="">Todas as filiais</option>';
+    document.getElementById('fCat').innerHTML = '<option value="">Todas as categorias</option>';
+
     const filiaisLista = [...new Set(DATA.registros.map(r=>r.NOME_FANTASIA))].sort();
     filiaisLista.forEach(f=>{document.getElementById('fFilial').innerHTML+=`<option value="${f}">${f}</option>`});
     const catsLista = [...new Set(DATA.registros.map(r=>r.CLA_DESCRICAO))].sort();
     catsLista.forEach(c=>{document.getElementById('fCat').innerHTML+=`<option value="${c}">${c}</option>`});
 
-    // Renderiza Elementos Visuais
     renderizarKPIs();
     renderizarGraficos();
     renderizarTabelasEstaticas();
     
     // Alerta Condicional Dinâmico (Facebook/Meta)
     const facebookData = DATA.fornecedores.find(f => f.AGENTE.toUpperCase().includes('FACEBOOK') || f.AGENTE.toUpperCase().includes('META'));
+    const alertBox = document.getElementById('facebookAlert');
     if (facebookData && facebookData.status === 'Vencido') {
-        const alertBox = document.getElementById('facebookAlert');
-        alertBox.innerHTML = `<span class="alert-icon">🚨</span><div><strong style="color:var(--red)">${facebookData.AGENTE}: ${fmt(facebookData.saldo)} vencido há ${facebookData.dias} dias.</strong> &nbsp;Ação imediata recomendada.</div>`;
+        alertBox.innerHTML = `<span class="alert-icon">🚨</span><div><strong style="color:var(--red)">${facebookData.AGENTE}: ${fmt(facebookData.saldo)} vencido há ${facebookData.dias} dias.</strong> &nbsp;Ação imediata de contingência recomendada para evitar pausas em anúncios.</div>`;
         alertBox.style.display = 'flex';
+    } else {
+        alertBox.style.display = 'none';
     }
 
     applyFilters(); 
 }
 
 function renderizarKPIs() {
-    const totalVencidoPct = ((DATA.kpis.vencido / DATA.kpis.total) * 100).toFixed(1);
-    const totalAVencerPct = ((DATA.kpis.a_vencer / DATA.kpis.total) * 100).toFixed(1);
+    const totalVencidoPct = DATA.kpis.total > 0 ? ((DATA.kpis.vencido / DATA.kpis.total) * 100).toFixed(1) : 0;
+    const totalAVencerPct = DATA.kpis.total > 0 ? ((DATA.kpis.a_vencer / DATA.kpis.total) * 100).toFixed(1) : 0;
     
-    // Procura dinamicamente o maior fornecedor vencido
     const vencidosForn = DATA.fornecedores.filter(f => f.status === 'Vencido');
     const maiorVencido = vencidosForn.length > 0 ? vencidosForn.reduce((max, f) => f.saldo > max.saldo ? f : max, vencidosForn[0]) : null;
 
@@ -345,7 +450,7 @@ function renderizarKPIs() {
         {label:'Saldo Total em Aberto', value: fmtK(DATA.kpis.total), sub: DATA.kpis.total_parcelas+' parcelas', cls:'blue'},
         {label:'Total Vencido', value: fmtK(DATA.kpis.vencido), sub: `${DATA.kpis.qtd_vencido} parcelas · ${totalVencidoPct}%`, cls:'red'},
         {label:'A Vencer', value: fmtK(DATA.kpis.a_vencer), sub: `${DATA.kpis.qtd_aberto} parcelas · ${totalAVencerPct}%`, cls:'green'},
-        {label:'Projeção Próximo Mês', value: DATA.mensal && DATA.mensal.length > 0 ? fmtK(DATA.mensal[0].valor) : 'R$ 0', sub: 'A vencer', cls:'orange'},
+        {label:'Projeção Próximo Mês', value: DATA.mensal && DATA.mensal.length > 0 ? fmtK(DATA.mensal[0].valor) : 'R$ 0', sub: 'Mapeado a vencer', cls:'orange'},
         {label:'Maior Alvo Vencido', value: maiorVencido ? fmtK(maiorVencido.saldo) : 'R$ 0', sub: maiorVencido ? maiorVencido.nome_curto : 'Nenhum', cls:'purple'},
     ];
     
@@ -441,15 +546,16 @@ function renderizarGraficos() {
       }
     });
 
-    // Fornecedores bar chart
+    // Fornecedores bar chart (exibe top 20 para fazer jus ao título)
+    const top20forn = DATA.fornecedores.slice(0,20);
     new Chart(document.getElementById('chartForn'),{
       type:'bar',
       data:{
-        labels: DATA.fornecedores.map(d=>d.nome_curto),
+        labels: top20forn.map(d=>d.nome_curto),
         datasets:[{
           label:'Saldo em Aberto',
-          data: DATA.fornecedores.map(d=>d.saldo),
-          backgroundColor: DATA.fornecedores.map(d=>d.status==='Vencido'?COLORS.red:COLORS.blue),
+          data: top20forn.map(d=>d.saldo),
+          backgroundColor: top20forn.map(d=>d.status==='Vencido'?COLORS.red:COLORS.blue),
           borderRadius:4,borderWidth:0
         }]
       },
@@ -669,7 +775,6 @@ function renderTable(){
 
 function changePage(dir){currentPage+=dir;renderTable();}
 
-// Executa a carga inicial ao abrir a página
 window.addEventListener('DOMContentLoaded', carregarDados);
 </script>
 </body>
