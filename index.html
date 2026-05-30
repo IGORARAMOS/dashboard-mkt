@@ -7,30 +7,69 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;
-  --text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;
-  --red:#f85149;--red-s:#3d1a1a;--red-m:#7d2020;
-  --green:#3fb950;--green-s:#1a2e1a;
-  --orange:#d29922;--orange-s:#2d2005;
-  --purple:#bc8cff;--purple-s:#2a1a3e;
-  --gold:#e3b341;
+
+/* ── CONFIGURAÇÃO DE TEMAS AUTOMÁTICOS (LIGHT/DARK) ── */
+:root {
+  /* Padrão: Modo Claro (Light Mode) */
+  --bg: #f6f8fa;
+  --surface: #ffffff;
+  --surface2: #eaeef2;
+  --border: #d0d7de;
+  --text: #24292f;
+  --muted: #57606a;
+  --accent: #0969da;
+  --red: #cf222e;
+  --red-s: #ffebe9;
+  --red-m: #ff8182;
+  --green: #1a7f37;
+  --green-s: #dafbe1;
+  --orange: #9a6700;
+  --purple: #8250df;
+  --header-grad: linear-gradient(135deg, #1f2937, #111827);
+  --header-text: #ffffff;
 }
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+@media (prefers-color-scheme: dark) {
+  /* Ativado automaticamente se o computador estiver em Modo Escuro */
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --red: #f85149;
+    --red-s: #3d1a1a;
+    --red-m: #7d2020;
+    --green: #3fb950;
+    --green-s: #1a2e1a;
+    --orange: #d29922;
+    --purple: #bc8cff;
+    --header-grad: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    --header-text: #ffffff;
+  }
+}
+
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;transition: background 0.3s, color 0.3s;}
+
 /* ── HEADER ── */
-.header{background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
-.header-left h1{font-size:20px;font-weight:700;letter-spacing:.5px;color:#fff}
-.header-left p{font-size:12px;color:var(--muted);margin-top:3px}
-.badge-ref{background:#1f3a4a;color:var(--accent);font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--accent)}
+.header{background:var(--header-grad);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.header-left h1{font-size:20px;font-weight:700;letter-spacing:.5px;color:var(--header-text)}
+.header-left p{font-size:12px;color:#cbd5e1;margin-top:3px}
+.badge-ref{background:rgba(255,255,255,0.15);color:#fff;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.25)}
+
 /* ── NAV TABS ── */
 .nav{display:flex;gap:4px;padding:12px 28px 0;background:var(--surface);border-bottom:1px solid var(--border)}
 .nav-btn{padding:8px 18px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;border-bottom:2px solid transparent;transition:all .2s;border-radius:4px 4px 0 0}
 .nav-btn:hover{color:var(--text);background:var(--surface2)}
 .nav-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface2)}
+
 /* ── PAGES ── */
 .page{display:none;padding:24px 28px;animation:fadeIn .25s ease}
 .page.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
 /* ── KPI GRID ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;transition:transform .15s}
@@ -49,12 +88,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .kpi.orange .kpi-value{color:var(--orange)}
 .kpi.purple .kpi-value{color:var(--purple)}
 .kpi-sub{font-size:11px;color:var(--muted);margin-top:5px}
+
 /* ── CHARTS GRID ── */
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
 .card-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .card-title span{color:var(--accent)}
 canvas{max-width:100%}
+
 /* ── FILTERS ── */
 .filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;align-items:center}
 .filters select,.filters input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:6px;font-size:13px;outline:none;transition:border .2s}
@@ -63,39 +104,33 @@ canvas{max-width:100%}
 .btn-clear{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;transition:all .2s}
 .btn-clear:hover{border-color:var(--accent);color:var(--accent)}
 .filter-count{font-size:12px;color:var(--muted);margin-left:auto}
+
 /* ── TABLE ── */
 .table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead th{background:var(--surface2);padding:10px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
 thead th:hover{color:var(--text)}
-thead th.sort-asc::after{content:' ↑';color:var(--accent)}
-thead th.sort-desc::after{content:' ↓';color:var(--accent)}
 tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 tbody tr:hover{background:var(--surface2)}
-tbody tr.vencido{background:#1e0f0f}
-tbody tr.vencido:hover{background:#2a1414}
+tbody tr.vencido{background:var(--red-s)}
 td{padding:9px 12px;white-space:nowrap}
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.4px}
 .badge-v{background:var(--red-s);color:var(--red);border:1px solid var(--red-m)}
-.badge-a">background:var(--green-s);color:var(--green)}
-.badge-aging-1{background:#3d1a1a;color:#f85149}
-.badge-aging-2{background:#2d2005;color:#d29922}
-.badge-aging-3{background:#1a1a0a;color:#e3b341}
-.badge-aging-4{background:#3d1a1a;color:#ff6b6b;font-weight:800}
+.badge-a{background:var(--green-s);color:var(--green)}
+.badge-aging-1{background:var(--red-s);color:var(--red)}
+
 /* ── PROGRESS BARS ── */
 .pbar-wrap{display:flex;align-items:center;gap:8px}
 .pbar{flex:1;background:var(--surface2);border-radius:4px;height:6px;overflow:hidden}
 .pbar-fill{height:100%;border-radius:4px;transition:width .6s ease}
 .pbar-label{font-size:11px;color:var(--muted);min-width:70px;text-align:right}
+
 /* ── PAGINATION ── */
 .pagination{display:flex;align-items:center;gap:8px;margin-top:14px;justify-content:flex-end}
 .pagination button{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 12px;border-radius:5px;cursor:pointer;font-size:12px}
 .pagination button:hover{border-color:var(--accent);color:var(--accent)}
 .pagination button:disabled{opacity:.3;cursor:default}
-.pagination span{font-size:12px;color:var(--muted)}
-/* ── ALERT STRIP ── */
-.alert{background:linear-gradient(90deg,#3d1a1a,#1e0f0f);border:1px solid var(--red-m);border-radius:8px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-size:13px}
-.alert-icon{font-size:18px}
+
 /* ── LOADING SCREEN ── */
 #loading-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:9999}
 .spinner{width:40px;height:40px;border:4px solid var(--surface2);border-top:4px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:15px}
@@ -106,13 +141,13 @@ td{padding:9px 12px;white-space:nowrap}
 
 <div id="loading-screen">
   <div class="spinner"></div>
-  <p style="color:var(--muted); font-size:16px;">Calculando atrasos pelo calendário real...</p>
+  <p style="color:var(--muted); font-size:16px;">Sincronizando interface e recalculando meses...</p>
 </div>
 
 <div class="header">
   <div class="header-left">
-    <h1>📊 APS EM ABERTO · MKT</h1>
-    <p>INC Empreendimentos — Análise Real-Time</p>
+    <h1>📊 Dashboard · Contas a Pagar em Aberto · MKT</h1>
+    <p>INC Empreendimentos — Análise Estratégica Real-Time</p>
   </div>
   <span class="badge-ref" id="dataAtualizacao">Carregando ref...</span>
 </div>
@@ -126,7 +161,6 @@ td{padding:9px 12px;white-space:nowrap}
 </nav>
 
 <div id="visao-geral" class="page active">
-  <div class="alert" id="facebookAlert" style="display:none;"></div>
   <div class="kpi-grid" id="kpi-grid"></div>
 
   <div class="charts-row">
@@ -220,13 +254,6 @@ td{padding:9px 12px;white-space:nowrap}
     </select>
     <select id="fFilial" onchange="applyFilters()"><option value="">Todas as filiais</option></select>
     <select id="fCat" onchange="applyFilters()"><option value="">Todas as categorias</option></select>
-    <select id="fAging" onchange="applyFilters()">
-      <option value="">Todos os agings</option>
-      <option value="1 a 30 dias">1–30 dias</option>
-      <option value="31 a 60 dias">31–60 dias</option>
-      <option value="61 a 90 dias">61–90 dias</option>
-      <option value="90+ dias">90+ dias</option>
-    </select>
     <button class="btn-clear" onclick="clearFilters()">✕ Limpar</button>
     <span class="filter-count" id="filterCount"></span>
   </div>
@@ -234,14 +261,14 @@ td{padding:9px 12px;white-space:nowrap}
     <table>
       <thead><tr>
         <th onclick="sortTable('STATUS_VENCIMENTO', event)">Status</th>
-        <th onclick="sortTable('AGING', event)">Aging</th>
-        <th onclick="sortTable('NOME_FANTASIA', event)">Filial</th>
-        <th onclick="sortTable('AGENTE', event)">Fornecedor</th>
-        <th onclick="sortTable('VENCIMENTO', event)">Vencimento</th>
-        <th onclick="sortTable('VALOR', event)">Valor (R$)</th>
+        <th>Aging</th>
+        <th>Filial</th>
+        <th>Fornecedor</th>
+        <th>Vencimento</th>
+        <th>Valor (R$)</th>
         <th onclick="sortTable('SALDO_EM_ABERTO', event)">Saldo (R$)</th>
         <th onclick="sortTable('DIAS_ATRASO', event)">Atraso Real</th>
-        <th onclick="sortTable('CLA_DESCRICAO', event)">Categoria</th>
+        <th>Categoria</th>
       </tr></thead>
       <tbody id="tbodyReg"></tbody>
     </table>
@@ -262,16 +289,13 @@ let sortCol = 'DIAS_ATRASO', sortDir = -1;
 let currentPage = 1;
 const pageSize = 30;
 
+const getCssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const fmt = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtK = v => v >= 1000000 ? 'R$ '+(v/1000000).toFixed(1)+'M' : v >= 1000 ? 'R$ '+(v/1000).toFixed(0)+'K' : fmt(v);
 
-const COLORS = {red:'#f85149',orange:'#d29922',yellow:'#e3b341',darkred:'#c0392b',green:'#3fb950',blue:'#58a6ff',purple:'#bc8cff'};
-const PALETTE = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364','#d2a8ff','#e3b341'];
-
-Chart.defaults.color = '#8b949e';
+Chart.defaults.color = () => getCssVar('--muted');
 Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
 
-// Auxiliar para converter DD/MM/AAAA em Objeto Date Real
 function parseDataBr(str) {
     if(!str || !str.includes('/')) return null;
     const p = str.split('/');
@@ -284,20 +308,17 @@ async function carregarDados() {
         const resData = await response.json();
         let rawRecords = Array.isArray(resData) ? resData : (resData.registros || []);
         
-        if(rawRecords.length === 0) throw new Error('Nenhum registro retornado.');
+        if(rawRecords.length === 0) throw new Error('Sem registros.');
 
         const hoje = new Date();
         hoje.setHours(0,0,0,0);
 
-        // 1. Processamento e recalculo com base no calendário real
         DATA.registros = rawRecords.map(r => {
             let saldo = parseFloat(r.SALDO_EM_ABERTO || r.saldo_em_aberto || 0);
             let valor = parseFloat(r.VALOR || r.valor || 0);
             let vctStr = r.VENCIMENTO || r.vencimento || '';
-            
-            // Cálculo dos dias reais de atraso usando Timestamps
             let diasAtrasoReal = 0;
-            let statusCalculado = r.STATUS_VENCIMENTO || 'Em aberto';
+            let statusCalculado = 'Em aberto';
             
             const dataVct = parseDataBr(vctStr);
             if (dataVct) {
@@ -306,8 +327,6 @@ async function carregarDados() {
                     const diffTime = Math.abs(hoje - dataVct);
                     diasAtrasoReal = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     statusCalculado = 'Vencido';
-                } else {
-                    statusCalculado = 'Em aberto';
                 }
             }
 
@@ -328,12 +347,10 @@ async function carregarDados() {
                 VALOR: valor,
                 SALDO_EM_ABERTO: saldo,
                 DIAS_ATRASO: diasAtrasoReal,
-                CLA_DESCRICAO: r.CLA_DESCRICAO || r.cla_descricao || 'Outros',
-                CNPJ: r.CNPJ || r.cnpj || ''
+                CLA_DESCRICAO: r.CLA_DESCRICAO || r.cla_descricao || 'Outros'
             };
         });
 
-        // Estampar data e hora da última atualização na barra superior
         const agora = new Date();
         document.getElementById('dataAtualizacao').textContent = `Atualizado em: ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
 
@@ -343,46 +360,66 @@ async function carregarDados() {
 
     } catch (error) {
         console.error(error);
-        document.getElementById('loading-screen').innerHTML = `<p style="color:var(--red);">Erro ao processar calendário real da planilha.</p>`;
+        document.getElementById('loading-screen').innerHTML = `<p style="color:var(--red);">Erro ao processar a resposta dos dados reais.</p>`;
     }
 }
 
 function compilarMetricasDashboard() {
-    let total = 0, vencido = 0, a_vencer = 0, qtd_vencido = 0, qtd_aberto = 0;
+    let total = 0, vencido = 0, a_vencer = 0, qtd_vencido = 0, qtd_aberto = 0, saldoProximoMes = 0;
     let agFilial = {}, agCat = {}, agForn = {}, agMensal = {};
     let agingFaixas = { '1 a 30 dias': { val: 0, qtd: 0 }, '31 a 60 dias': { val: 0, qtd: 0 }, '61 a 90 dias': { val: 0, qtd: 0 }, '90+ dias': { val: 0, qtd: 0 } };
+
+    // ── IDENTIFICAÇÃO DO MÊS SEGUINTE DO CALENDÁRIO REAL ──
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear();
+    const mesAtual = hoje.getMonth(); // 0 = Jan, 4 = Maio, etc.
+    
+    // Calcula exatamente o próximo mês e ano comercial
+    let proxMesInt = mesAtual + 1;
+    let proxAnoInt = anoAtual;
+    if (proxMesInt > 11) {
+        proxMesInt = 0;
+        proxAnoInt += 1;
+    }
+    
+    // Formato padrão da string de agrupamento: "MM/AAAA" (ex: "06/2026")
+    const strProxMesAlvo = String(proxMesInt + 1).padStart(2, '0') + '/' + proxAnoInt;
+    const nomeMeses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+    const rotuloProxMes = nomeMeses[proxMesInt];
 
     DATA.registros.forEach(r => {
         let v = r.SALDO_EM_ABERTO;
         total += v;
         
+        // Separação do mês/ano da linha atual
+        let partes = r.VENCIMENTO.split('/');
+        let mesAnoLinha = partes.length === 3 ? partes[1] + '/' + partes[2] : '';
+
         if (r.STATUS_VENCIMENTO === 'Vencido') {
             vencido += v;
             qtd_vencido++;
-            if (agingFaixas[r.AGING]) {
-                agingFaixas[r.AGING].val += v;
-                agingFaixas[r.AGING].qtd++;
-            }
+            if (agingFaixas[r.AGING]) { agingFaixas[r.AGING].val += v; agingFaixas[r.AGING].qtd++; }
         } else {
             a_vencer += v;
             qtd_aberto++;
-            let partes = r.VENCIMENTO.split('/');
-            let mesAno = partes.length === 3 ? partes[1] + '/' + partes[2] : 'Futuro';
-            agMensal[mesAno] = (agMensal[mesAno] || 0) + v;
+            if(mesAnoLinha) {
+                agMensal[mesAnoLinha] = (agMensal[mesAnoLinha] || 0) + v;
+            }
+            // Regra Dinâmica: Se o vencimento for EXATAMENTE do próximo mês sequencial
+            if (mesAnoLinha === strProxMesAlvo) {
+                saldoProximoMes += v;
+            }
         }
 
-        // Filiais
         if (!agFilial[r.NOME_FANTASIA]) agFilial[r.NOME_FANTASIA] = { vencido: 0, a_vencer: 0, total: 0 };
         agFilial[r.NOME_FANTASIA].total += v;
         if (r.STATUS_VENCIMENTO === 'Vencido') agFilial[r.NOME_FANTASIA].vencido += v;
         else agFilial[r.NOME_FANTASIA].a_vencer += v;
 
-        // Categorias
         if (!agCat[r.CLA_DESCRICAO]) agCat[r.CLA_DESCRICAO] = { vencido: 0, total: 0 };
         agCat[r.CLA_DESCRICAO].total += v;
         if (r.STATUS_VENCIMENTO === 'Vencido') agCat[r.CLA_DESCRICAO].vencido += v;
 
-        // Fornecedores
         if (!agForn[r.AGENTE]) agForn[r.AGENTE] = { saldo: 0, status: 'Em aberto', dias: 0, parcelas: 0, filial: r.NOME_FANTASIA, categoria: r.CLA_DESCRICAO };
         agForn[r.AGENTE].saldo += v;
         agForn[r.AGENTE].parcelas++;
@@ -390,7 +427,7 @@ function compilarMetricasDashboard() {
         if (r.STATUS_VENCIMENTO === 'Vencido') agForn[r.AGENTE].status = 'Vencido';
     });
 
-    DATA.kpis = { total, vencido, a_vencer, total_parcelas: DATA.registros.length, qtd_vencido, qtd_aberto };
+    DATA.kpis = { total, vencido, a_vencer, total_parcelas: DATA.registros.length, qtd_vencido, qtd_aberto, saldoProximoMes, rotuloProxMes };
     DATA.aging = Object.keys(agingFaixas).map(k => ({ faixa: k, valor: agingFaixas[k].val, qtd: agingFaixas[k].qtd }));
     DATA.mensal = Object.keys(agMensal).map(k => ({ mes: k, valor: agMensal[k] })).sort();
     DATA.filial = Object.keys(agFilial).map(k => ({ NOME_FANTASIA: k, vencido: agFilial[k].vencido, a_vencer: agFilial[k].a_vencer, total: agFilial[k].total })).sort((a,b)=>b.total - a.total);
@@ -403,7 +440,6 @@ function compilarMetricasDashboard() {
 function inicializarDashboard() {
     document.getElementById('fFilial').innerHTML = '<option value="">Todas as filiais</option>';
     document.getElementById('fCat').innerHTML = '<option value="">Todas as categorias</option>';
-    
     [...new Set(DATA.registros.map(r=>r.NOME_FANTASIA))].sort().forEach(f=>{document.getElementById('fFilial').innerHTML+=`<option value="${f}">${f}</option>`});
     [...new Set(DATA.registros.map(r=>r.CLA_DESCRICAO))].sort().forEach(c=>{document.getElementById('fCat').innerHTML+=`<option value="${c}">${c}</option>`});
 
@@ -423,7 +459,7 @@ function renderizarKPIs() {
         {label:'Saldo Total em Aberto', value: fmtK(DATA.kpis.total), sub: DATA.kpis.total_parcelas+' parcelas', cls:'blue'},
         {label:'Total Vencido Real', value: fmtK(DATA.kpis.vencido), sub: `${DATA.kpis.qtd_vencido} parcelas · ${totalVencidoPct}%`, cls:'red'},
         {label:'A Vencer', value: fmtK(DATA.kpis.a_vencer), sub: `${DATA.kpis.qtd_aberto} parcelas · ${totalAVencerPct}%`, cls:'green'},
-        {label:'Projeção Próximo Mês', value: DATA.mensal.length > 0 ? fmtK(DATA.mensal[0].valor) : 'R$ 0', sub: 'Mapeado no fluxo', cls:'orange'},
+        {label:`Fluxo Próx. Mês (${DATA.kpis.rotuloProxMes})`, value: fmtK(DATA.kpis.saldoProximoMes), sub: 'Somente fluxo do mês +1', cls:'orange'},
         {label:'Maior Alvo de Atraso', value: maiorVencido ? fmtK(maiorVencido.saldo) : 'R$ 0', sub: maiorVencido ? `${maiorVencido.nome_curto} (${maiorVencido.dias}d)` : 'Nenhum', cls:'purple'},
     ];
     
@@ -435,87 +471,57 @@ function renderizarKPIs() {
 }
 
 function renderizarGraficos() {
+    const red = getCssVar('--red'), blue = getCssVar('--accent'), borderGrid = getCssVar('--border');
+    const palette = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364'];
+
+    const configComum = {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            x: { grid: { color: borderGrid }, ticks: { color: () => getCssVar('--muted') } },
+            y: { grid: { color: borderGrid }, ticks: { color: () => getCssVar('--muted') } }
+        }
+    };
+
     new Chart(document.getElementById('chartAging'),{
-      type:'bar',
-      data:{
-        labels: DATA.aging.map(d=>d.faixa+' ('+d.qtd+'x)'),
-        datasets:[{ label:'Saldo Vencido', data: DATA.aging.map(d=>d.valor), backgroundColor:[COLORS.red,COLORS.orange,COLORS.yellow,COLORS.darkred], borderRadius:5 }]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#21262d'}},y:{grid:{color:'#21262d'},ticks:{callback:fmtK}}}}
+      type:'bar', data:{ labels: DATA.aging.map(d=>d.faixa), datasets:[{ label:'Saldo Vencido', data: DATA.aging.map(d=>d.valor), backgroundColor:[red, '#d29922', '#e3b341', '#7d2020'], borderRadius:5 }] },
+      options: { ...configComum, plugins:{legend:{display:false}} }
     });
 
     new Chart(document.getElementById('chartMensal'),{
-      type:'bar',
-      data:{
-        labels: DATA.mensal.map(d=>d.mes),
-        datasets:[{ label:'A Vencer', data: DATA.mensal.map(d=>d.valor), backgroundColor: COLORS.blue, borderRadius:5 }]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#21262d'},ticks:{callback:fmtK}}}}
+      type:'bar', data:{ labels: DATA.mensal.map(d=>d.mes), datasets:[{ label:'A Vencer', data: DATA.mensal.map(d=>d.valor), backgroundColor: blue, borderRadius:5 }] },
+      options: { ...configComum, plugins:{legend:{display:false}} }
     });
 
     const top8fil = DATA.filial.slice(0,8);
     new Chart(document.getElementById('chartFilial'),{
-      type:'bar',
-      data:{
-        labels: top8fil.map(d=>d.NOME_FANTASIA),
-        datasets:[
-          {label:'Vencido Real', data:top8fil.map(d=>d.vencido), backgroundColor:COLORS.red, borderRadius:3},
-          {label:'A Vencer', data:top8fil.map(d=>d.a_vencer), backgroundColor:COLORS.blue, borderRadius:3}
-        ]
-      },
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:false,grid:{color:'#30363d'}},y:{grid:{display:false}}}}
+      type:'bar', data:{ labels: top8fil.map(d=>d.NOME_FANTASIA), datasets:[{label:'Vencido', data:top8fil.map(d=>d.vencido), backgroundColor:red},{label:'A Vencer', data:top8fil.map(d=>d.a_vencer), backgroundColor:blue}] },
+      options: { ...configComum, indexAxis:'y' }
     });
 
-    const top8cat = DATA.categoria.slice(0,8);
     new Chart(document.getElementById('chartCat'),{
-      type:'bar',
-      data:{
-        labels: top8cat.map(d=>d.CLA_DESCRICAO),
-        datasets:[{ data:top8cat.map(d=>d.total), backgroundColor: PALETTE, borderRadius:4 }]
-      },
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+      type:'bar', data:{ labels: DATA.categoria.slice(0,8).map(d=>d.CLA_DESCRICAO), datasets:[{ data:DATA.categoria.slice(0,8).map(d=>d.total), backgroundColor: palette }] },
+      options: { ...configComum, indexAxis:'y', plugins:{legend:{display:false}} }
     });
 
     new Chart(document.getElementById('chartForn'),{
-      type:'bar',
-      data:{
-        labels: DATA.fornecedores.slice(0,20).map(d=>d.nome_curto),
-        datasets:[{ data: DATA.fornecedores.slice(0,20).map(d=>d.saldo), backgroundColor: DATA.fornecedores.slice(0,20).map(d=>d.status==='Vencido'?COLORS.red:COLORS.blue), borderRadius:4 }]
-      },
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+      type:'bar', data:{ labels: DATA.fornecedores.slice(0,20).map(d=>d.nome_curto), datasets:[{ data: DATA.fornecedores.slice(0,20).map(d=>d.saldo), backgroundColor: DATA.fornecedores.slice(0,20).map(d=>d.status==='Vencido'?red:blue), borderRadius:4 }] },
+      options: { ...configComum, indexAxis:'y', plugins:{legend:{display:false}} }
     });
 
     new Chart(document.getElementById('chartFilialStack'),{
-      type:'bar',
-      data:{
-        labels: DATA.filial.map(d=>d.NOME_FANTASIA),
-        datasets:[
-          {label:'Vencido', data:DATA.filial.map(d=>d.vencido), backgroundColor:COLORS.red},
-          {label:'A Vencer', data:DATA.filial.map(d=>d.a_vencer), backgroundColor:COLORS.blue}
-        ]
-      },
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}}}
+      type:'bar', data:{ labels: DATA.filial.map(d=>d.NOME_FANTASIA), datasets:[{label:'Vencido', data:DATA.filial.map(d=>d.vencido), backgroundColor:red},{label:'A Vencer', data:DATA.filial.map(d=>d.a_vencer), backgroundColor:blue}] },
+      options: { ...configComum, indexAxis:'y', scales:{ x:{stacked:true, grid:{color:borderGrid}}, y:{stacked:true, grid:{display:false}} } }
     });
 
     new Chart(document.getElementById('chartPie'),{
-      type:'doughnut',
-      data:{
-        labels: DATA.categoria.map(d=>d.CLA_DESCRICAO),
-        datasets:[{data:DATA.categoria.map(d=>d.total), backgroundColor:PALETTE, borderColor:'#161b22', borderWidth:2}]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:10}}}}}
+      type:'doughnut', data:{ labels: DATA.categoria.map(d=>d.CLA_DESCRICAO), datasets:[{data:DATA.categoria.map(d=>d.total), backgroundColor:palette, borderColor: () => getCssVar('--surface'), borderWidth:2}] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{color: () => getCssVar('--text'), boxWidth:10, font:{size:10}}}} }
     });
 
     new Chart(document.getElementById('chartCatStack'),{
-      type:'bar',
-      data:{
-        labels: DATA.categoria.map(d=>d.CLA_DESCRICAO),
-        datasets:[
-          {label:'Vencido', data:DATA.categoria.map(d=>d.vencido), backgroundColor:COLORS.red},
-          {label:'A Vencer', data:DATA.categoria.map(d=>d.total-d.vencido), backgroundColor:COLORS.blue}
-        ]
-      },
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true},y:{stacked:true}}}
+      type:'bar', data:{ labels: DATA.categoria.map(d=>d.CLA_DESCRICAO), datasets:[{label:'Vencido', data:DATA.categoria.map(d=>d.vencido), backgroundColor:red},{label:'A Vencer', data:DATA.categoria.map(d=>d.total-d.vencido), backgroundColor:blue}] },
+      options: { ...configComum, indexAxis:'y', scales:{ x:{stacked:true, grid:{color:borderGrid}}, y:{stacked:true, grid:{display:false}} } }
     });
 }
 
@@ -523,12 +529,11 @@ function renderizarTabelasEstaticas() {
     const tbForn = document.getElementById('tbodyForn');
     tbForn.innerHTML = '';
     DATA.fornecedores.forEach(f=>{
-      const badge = f.status==='Vencido'?` <span class="badge badge-v">VENCIDO</span>`:` <span class="badge badge-a">EM ABERTO</span>`;
       tbForn.innerHTML+=`<tr class="${f.status==='Vencido'?'vencido':''}">
-        <td>${f.AGENTE}</td><td>${badge}</td><td>${f.filial}</td><td>${f.categoria}</td>
+        <td>${f.AGENTE}</td><td><span class="badge ${f.status==='Vencido'?'badge-v':'badge-a'}">${f.status.toUpperCase()}</span></td><td>${f.filial}</td><td>${f.categoria}</td>
         <td style="text-align:center">${f.parcelas}</td>
-        <td style="text-align:center;font-weight:700;color:${f.dias>0?COLORS.red:COLORS.green}">${f.dias>0?f.dias+' dias':'—'}</td>
-        <td style="text-align:right;font-weight:600;color:${f.status==='Vencido'?COLORS.red:COLORS.blue}">${fmt(f.saldo)}</td>
+        <td style="text-align:center;font-weight:700;color:var(${f.dias>0?'--red':'--green'})">${f.dias>0?f.dias+' dias':'—'}</td>
+        <td style="text-align:right;font-weight:600;color:var(${f.status==='Vencido'?'--red':'--accent'})">${fmt(f.saldo)}</td>
       </tr>`;
     });
 
@@ -537,11 +542,11 @@ function renderizarTabelasEstaticas() {
     DATA.filial.forEach(f=>{
       const pct = f.total > 0 ? (f.vencido/f.total*100).toFixed(1) : 0;
       tbFilial.innerHTML+=`<tr>
-        <td>${f.NOME_FANTASIA}</td><td style="text-align:right;color:${COLORS.red}">${fmt(f.vencido)}</td><td style="text-align:right;color:${COLORS.blue}">${fmt(f.a_vencer)}</td>
+        <td>${f.NOME_FANTASIA}</td><td style="text-align:right;color:var(--red)">${fmt(f.vencido)}</td><td style="text-align:right;color:var(--accent)">${fmt(f.a_vencer)}</td>
         <td style="text-align:right;font-weight:700">${fmt(f.total)}</td>
         <td>
           <div class="pbar-wrap">
-            <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:${parseFloat(pct)>50?COLORS.red:COLORS.orange}"></div></div>
+            <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:var(${parseFloat(pct)>50?'--red':'--orange'})"></div></div>
             <span class="pbar-label">${pct}%</span>
           </div>
         </td>
@@ -553,7 +558,7 @@ function renderizarTabelasEstaticas() {
     DATA.categoria.forEach(c=>{
       const pct = DATA.kpis.total > 0 ? (c.total/DATA.kpis.total*100).toFixed(1) : 0;
       tbCat.innerHTML+=`<tr>
-        <td>${c.CLA_DESCRICAO}</td><td style="text-align:right;color:${COLORS.red}">${fmt(c.vencido)}</td><td style="text-align:right;color:${COLORS.blue}">${fmt(c.total-c.vencido)}</td>
+        <td>${c.CLA_DESCRICAO}</td><td style="text-align:right;color:var(--red)">${fmt(c.vencido)}</td><td style="text-align:right;color:var(--accent)">${fmt(c.total-c.vencido)}</td>
         <td style="text-align:right;font-weight:700">${fmt(c.total)}</td><td style="text-align:center">${pct}%</td>
       </tr>`;
     });
@@ -571,14 +576,12 @@ function applyFilters(){
   const st = document.getElementById('fStatus').value;
   const fi = document.getElementById('fFilial').value;
   const ca = document.getElementById('fCat').value;
-  const ag = document.getElementById('fAging').value;
   
   filtered = DATA.registros.filter(r=>{
     if(s && !r.AGENTE.toLowerCase().includes(s) && !r.NOME_FANTASIA.toLowerCase().includes(s)) return false;
     if(st && r.STATUS_VENCIMENTO!==st) return false;
     if(fi && r.NOME_FANTASIA!==fi) return false;
     if(ca && r.CLA_DESCRICAO!==ca) return false;
-    if(ag && r.AGING!==ag) return false;
     return true;
   });
   currentPage=1;
@@ -586,7 +589,7 @@ function applyFilters(){
 }
 
 function clearFilters(){
-  ['fSearch','fStatus','fFilial','fCat','fAging'].forEach(id=>{document.getElementById(id).value=''});
+  ['fSearch','fStatus','fFilial','fCat'].forEach(id=>{document.getElementById(id).value=''});
   applyFilters();
 }
 
@@ -609,12 +612,12 @@ function renderTable(){
   page.forEach(r=>{
     const isV=r.STATUS_VENCIMENTO==='Vencido';
     tb.innerHTML+=`<tr class="${isV?'vencido':''}">
-      <td>${isV?'<span class="badge badge-v">VENCIDO</span>':'<span class="badge badge-a">EM ABERTO</span>'}</td>
+      <td><span class="badge ${isV?'badge-v':'badge-a'}">${r.STATUS_VENCIMENTO.toUpperCase()}</span></td>
       <td><span class="badge badge-aging-1">${r.AGING || '👉 Fluxo'}</span></td>
       <td>${r.NOME_FANTASIA}</td><td>${r.AGENTE}</td><td>${r.VENCIMENTO}</td>
       <td style="text-align:right">${fmt(r.VALOR)}</td>
-      <td style="text-align:right;font-weight:600;color:${isV?COLORS.red:COLORS.blue}">${fmt(r.SALDO_EM_ABERTO)}</td>
-      <td style="text-align:center;font-weight:700;color:${isV?COLORS.red:COLORS.green}">${r.DIAS_ATRASO>0?r.DIAS_ATRASO+' dias':'—'}</td>
+      <td style="text-align:right;font-weight:600;color:var(${isV?'--red':'--accent'})">${fmt(r.SALDO_EM_ABERTO)}</td>
+      <td style="text-align:center;font-weight:700;color:var(${isV?'--red':'--green'})">${r.DIAS_ATRASO>0?r.DIAS_ATRASO+' dias':'—'}</td>
       <td>${r.CLA_DESCRICAO}</td>
     </tr>`;
   });
