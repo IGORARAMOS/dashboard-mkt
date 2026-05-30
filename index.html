@@ -293,7 +293,8 @@ const getCssVar = name => getComputedStyle(document.documentElement).getProperty
 const fmt = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtK = v => v >= 1000000 ? 'R$ '+(v/1000000).toFixed(1)+'M' : v >= 1000 ? 'R$ '+(v/1000).toFixed(0)+'K' : fmt(v);
 
-Chart.defaults.color = () => getCssVar('--muted');
+// Configuração estática reativa para os textos dos gráficos
+Chart.defaults.color = '#8b949e';
 Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
 
 function parseDataBr(str) {
@@ -317,6 +318,8 @@ async function carregarDados() {
             let saldo = parseFloat(r.SALDO_EM_ABERTO || r.saldo_em_aberto || 0);
             let valor = parseFloat(r.VALOR || r.valor || 0);
             let vctStr = r.VENCIMENTO || r.vencimento || '';
+            let planilhaStatus = r.STATUS_VENCIMENTO || r.status_vencimento || '';
+            
             let diasAtrasoReal = 0;
             let statusCalculado = 'Em aberto';
             
@@ -328,6 +331,13 @@ async function carregarDados() {
                     diasAtrasoReal = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     statusCalculado = 'Vencido';
                 }
+            }
+
+            // ── DUPLA CAMADA DE VERIFICAÇÃO DE STATUS ──
+            // Se a planilha explicitamente disser "Vencido", prioriza o real da planilha
+            if(planilhaStatus.toLowerCase().trim() === 'vencido') {
+                statusCalculado = 'Vencido';
+                if(diasAtrasoReal === 0) diasAtrasoReal = 1; // Força contagem caso falte sincronia de fuso
             }
 
             let agingLabel = '';
@@ -369,12 +379,11 @@ function compilarMetricasDashboard() {
     let agFilial = {}, agCat = {}, agForn = {}, agMensal = {};
     let agingFaixas = { '1 a 30 dias': { val: 0, qtd: 0 }, '31 a 60 dias': { val: 0, qtd: 0 }, '61 a 90 dias': { val: 0, qtd: 0 }, '90+ dias': { val: 0, qtd: 0 } };
 
-    // ── IDENTIFICAÇÃO DO MÊS SEGUINTE DO CALENDÁRIO REAL ──
+    // ── CALCULAR EXATAMENTE O PRÓXIMO MÊS COMERCIAL (FLUXO +1) ──
     const hoje = new Date();
     const anoAtual = hoje.getFullYear();
-    const mesAtual = hoje.getMonth(); // 0 = Jan, 4 = Maio, etc.
+    const mesAtual = hoje.getMonth(); 
     
-    // Calcula exatamente o próximo mês e ano comercial
     let proxMesInt = mesAtual + 1;
     let proxAnoInt = anoAtual;
     if (proxMesInt > 11) {
@@ -382,7 +391,6 @@ function compilarMetricasDashboard() {
         proxAnoInt += 1;
     }
     
-    // Formato padrão da string de agrupamento: "MM/AAAA" (ex: "06/2026")
     const strProxMesAlvo = String(proxMesInt + 1).padStart(2, '0') + '/' + proxAnoInt;
     const nomeMeses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
     const rotuloProxMes = nomeMeses[proxMesInt];
@@ -391,7 +399,6 @@ function compilarMetricasDashboard() {
         let v = r.SALDO_EM_ABERTO;
         total += v;
         
-        // Separação do mês/ano da linha atual
         let partes = r.VENCIMENTO.split('/');
         let mesAnoLinha = partes.length === 3 ? partes[1] + '/' + partes[2] : '';
 
@@ -405,7 +412,6 @@ function compilarMetricasDashboard() {
             if(mesAnoLinha) {
                 agMensal[mesAnoLinha] = (agMensal[mesAnoLinha] || 0) + v;
             }
-            // Regra Dinâmica: Se o vencimento for EXATAMENTE do próximo mês sequencial
             if (mesAnoLinha === strProxMesAlvo) {
                 saldoProximoMes += v;
             }
@@ -471,15 +477,16 @@ function renderizarKPIs() {
 }
 
 function renderizarGraficos() {
-    const red = getCssVar('--red'), blue = getCssVar('--accent'), borderGrid = getCssVar('--border');
+    // Cores absolutas para evitar conflito com carregamentos assíncronos de CSS
+    const red = '#cf222e', blue = '#0969da', borderGrid = 'rgba(128,128,128,0.15)';
     const palette = ['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364'];
 
     const configComum = {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-            x: { grid: { color: borderGrid }, ticks: { color: () => getCssVar('--muted') } },
-            y: { grid: { color: borderGrid }, ticks: { color: () => getCssVar('--muted') } }
+            x: { grid: { color: borderGrid } },
+            y: { grid: { color: borderGrid } }
         }
     };
 
@@ -515,8 +522,8 @@ function renderizarGraficos() {
     });
 
     new Chart(document.getElementById('chartPie'),{
-      type:'doughnut', data:{ labels: DATA.categoria.map(d=>d.CLA_DESCRICAO), datasets:[{data:DATA.categoria.map(d=>d.total), backgroundColor:palette, borderColor: () => getCssVar('--surface'), borderWidth:2}] },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{color: () => getCssVar('--text'), boxWidth:10, font:{size:10}}}} }
+      type:'doughnut', data:{ labels: DATA.categoria.map(d=>d.CLA_DESCRICAO), datasets:[{data:DATA.categoria.map(d=>d.total), backgroundColor:palette, borderWidth:1}] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{boxWidth:10, font:{size:10}}}} }
     });
 
     new Chart(document.getElementById('chartCatStack'),{
