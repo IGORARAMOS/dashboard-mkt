@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard MKT — INC Empreendimentos</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<style>
+.header-logo {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+  filter: var(--logo-filter);
+  transition: filter 0.3s ease;
+}
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg:#f6f8fa;--surface:#ffffff;--surface2:#eaeef2;--border:#d0d7de;
@@ -29,7 +35,16 @@
 }
 body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
 .header{background:var(--hgrad);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
-.header-brand{display:flex;align-items:center;gap:14px}
+<div class="header">
+  <div class="header-brand">
+    <img src="logo fundo transparente.png" alt="INC Empreendimentos" class="header-logo">
+    
+    <div class="header-left">
+      <h1> MARKETING </h1>
+    </div>
+  </div>
+  <span class="badge-ref" id="badgeRef">Carregando...</span>
+</div>
 .header-logo{height:42px;width:auto;object-fit:contain;filter:var(--logo-filter);transition: filter 0.3s ease}
 .header-left h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:.3px}
 .header-left p{font-size:11px;color:#94a3b8;margin-top:2px}
