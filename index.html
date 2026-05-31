@@ -51,8 +51,10 @@
 
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;transition: background 0.3s, color 0.3s;}
 
-/* ── HEADER ── */
+/* ── HEADER COM LOGO INC INTEGRADA ── */
 .header{background:var(--header-grad);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.header-brand {display:flex;align-items:center;gap:15px;}
+.header-logo {height:45px; width:auto; object-fit:contain; filter:drop-shadow(0px 2px 4px rgba(0,0,0,0.25));}
 .header-left h1{font-size:20px;font-weight:700;letter-spacing:.5px;color:var(--header-text)}
 .header-left p{font-size:12px;color:#cbd5e1;margin-top:3px}
 .badge-ref{background:rgba(255,255,255,0.15);color:#fff;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.25)}
@@ -143,9 +145,13 @@ td{padding:9px 12px;white-space:nowrap}
 </div>
 
 <div class="header">
-  <div class="header-left">
-    <h1>📊 Dashboard · Contas a Pagar em Aberto · MKT</h1>
-    <p>INC Empreendimentos — Análise Estratégica Real-Time</p>
+  <div class="header-brand">
+    <!-- Vinculação direta da imagem image_115981.png como logo corporativo oficial -->
+    <img src="image_115981.png" alt="INC Empreendimentos" class="header-logo" onerror="this.style.display='none'">
+    <div class="header-left">
+      <h1>Dashboard · Contas a Pagar em Aberto · MKT</h1>
+      <p>INC Empreendimentos — Análise Estratégica Real-Time</p>
+    </div>
   </div>
   <span class="badge-ref" id="dataAtualizacao">Carregando ref...</span>
 </div>
@@ -287,16 +293,17 @@ let sortCol = 'DIAS_ATRASO', sortDir = -1;
 let currentPage = 1;
 const pageSize = 30;
 
-const getCssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const fmt = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtK = v => v >= 1000000 ? 'R$ '+(v/1000000).toFixed(1)+'M' : v >= 1000 ? 'R$ '+(v/1000).toFixed(0)+'K' : fmt(v);
 
 Chart.defaults.color = '#8b949e';
 Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
 
+// ── PARSER ROBUSTO CONTRA FUSO HORÁRIO LOCAL/SERVER ──
 function parseDataBr(str) {
     if(!str || !str.includes('/')) return null;
     const p = str.split('/');
+    // Instancia o objeto exatamente no meio-dia (12:00:00) para neutralizar variações de fusos de navegadores
     return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]), 12, 0, 0);
 }
 
@@ -306,29 +313,35 @@ async function carregarDados() {
         const resData = await response.json();
         let rawRecords = Array.isArray(resData) ? resData : (resData.registros || []);
         
-        if(rawRecords.length === 0) throw new Error('Sem registros.');
+        if(rawRecords.length === 0) throw new Error('Sem registros mapeados.');
 
-        // Força a data de hoje zerada para comparação matemática justa
+        // Força a data de hoje para comparação rigorosamente também ao meio-dia
         const hoje = new Date();
-        hoje.setHours(0,0,0,0);
+        const hojeNormalizado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 12, 0, 0);
 
         DATA.registros = rawRecords.map(r => {
             let saldo = parseFloat(r.SALDO_EM_ABERTO || r.saldo_em_aberto || 0);
             let valor = parseFloat(r.VALOR || r.valor || 0);
             let vctStr = r.VENCIMENTO || r.vencimento || '';
+            let statusPlanilha = (r.STATUS_VENCIMENTO || r.status_vencimento || '').trim().toLowerCase();
             
             let diasAtrasoReal = 0;
             let statusCalculado = 'Em aberto';
             
-            // ── CÁLCULO MATEMÁTICO BASEADO NA DATA REAL DO VENCIMENTO ──
             const dataVct = parseDataBr(vctStr);
             if (dataVct) {
-                dataVct.setHours(0,0,0,0);
-                if (dataVct < hoje) {
-                    const diffTime = Math.abs(hoje - dataVct);
-                    diasAtrasoReal = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                // Se o vencimento é estritamente menor que a data de hoje normalizada, está vencido
+                if (dataVct < hojeNormalizado) {
+                    const diffTime = hojeNormalizado.getTime() - dataVct.getTime();
+                    diasAtrasoReal = Math.floor(diffTime / (1000 * 60 * 60 * 24));
                     statusCalculado = 'Vencido';
                 }
+            }
+
+            // Fallback de contingência caso o fuso mascare o vencimento mas a planilha acuse atraso
+            if ((statusPlanilha === 'vencido' || statusPlanilha === 'atrasado') && statusCalculado === 'Em aberto') {
+                statusCalculado = 'Vencido';
+                diasAtrasoReal = (diasAtrasoReal === 0) ? 1 : diasAtrasoReal;
             }
 
             let agingLabel = '';
@@ -361,7 +374,7 @@ async function carregarDados() {
 
     } catch (error) {
         console.error(error);
-        document.getElementById('loading-screen').innerHTML = `<p style="color:var(--red);">Erro ao processar a resposta dos dados reais.</p>`;
+        document.getElementById('loading-screen').innerHTML = `<p style="color:var(--red);">Erro fatal na carga e sincronização de dados.</p>`;
     }
 }
 
@@ -374,6 +387,7 @@ function compilarMetricasDashboard() {
     const anoAtual = hoje.getFullYear();
     const mesAtual = hoje.getMonth(); 
     
+    // Identificação precisa do próximo mês para o KPI de Fluxo Futuro
     let proxMesInt = mesAtual + 1;
     let proxAnoInt = anoAtual;
     if (proxMesInt > 11) {
@@ -399,9 +413,11 @@ function compilarMetricasDashboard() {
         } else {
             a_vencer += v;
             qtd_aberto++;
+            // Aloca na volumetria de projeção mensal dinâmica
             if(mesAnoLinha) {
                 agMensal[mesAnoLinha] = (agMensal[mesAnoLinha] || 0) + v;
             }
+            // Consolida no caixa previsto do mês subsequente
             if (mesAnoLinha === strProxMesAlvo) {
                 saldoProximoMes += v;
             }
@@ -425,7 +441,13 @@ function compilarMetricasDashboard() {
 
     DATA.kpis = { total, vencido, a_vencer, total_parcelas: DATA.registros.length, qtd_vencido, qtd_aberto, saldoProximoMes, rotuloProxMes };
     DATA.aging = Object.keys(agingFaixas).map(k => ({ faixa: k, valor: agingFaixas[k].val, qtd: agingFaixas[k].qtd }));
-    DATA.mensal = Object.keys(agMensal).map(k => ({ mes: k, valor: agMensal[k] })).sort();
+    
+    // Alinhamento cronológico correto do gráfico de projeção mensal
+    DATA.mensal = Object.keys(agMensal).map(k => ({ mes: k, valor: agMensal[k] })).sort((a,b) => {
+        let pa = a.mes.split('/'), pb = b.mes.split('/');
+        return new Date(pa[1], pa[0]-1) - new Date(pb[1], pb[0]-1);
+    });
+
     DATA.filial = Object.keys(agFilial).map(k => ({ NOME_FANTASIA: k, vencido: agFilial[k].vencido, a_vencer: agFilial[k].a_vencer, total: agFilial[k].total })).sort((a,b)=>b.total - a.total);
     DATA.categoria = Object.keys(agCat).map(k => ({ CLA_DESCRICAO: k, vencido: agCat[k].vencido, total: agCat[k].total })).sort((a,b)=>b.total - a.total);
     DATA.fornecedores = Object.keys(agForn).map(k => ({
