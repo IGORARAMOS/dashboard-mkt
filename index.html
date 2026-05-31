@@ -109,13 +109,13 @@ td{padding:8px 11px;white-space:nowrap}
 
 <div class="header">
   <div class="header-brand">
-    <svg class="header-logo" viewBox="0 0 520 180" xmlns="http://www.w3.org/2000/svg" style="height:42px;width:auto;filter:var(--logo-filter)">
-      <rect x="10" y="10" width="28" height="120" rx="4" fill="white"/>
-      <rect x="58" y="10" width="28" height="120" rx="4" fill="white"/>
-      <polygon points="86,10 114,10 86,130" fill="white"/>
-      <rect x="86" y="10" width="28" height="120" rx="4" fill="white"/>
-      <path d="M150,10 Q240,10 240,70 L212,70 Q212,38 150,38 Q118,38 118,70 L118,70 Q118,102 150,102 Q212,102 212,70 L240,70 Q240,130 150,130 Q90,130 90,70 Q90,10 150,10 Z" fill="white"/>
-      <text x="10" y="168" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="22" letter-spacing="8" font-weight="300" fill="white">EMPREENDIMENTOS</text>
+    <svg class="header-logo" viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg" style="height:38px;width:auto;display:block;fill:#ffffff">
+      <rect x="0" y="0" width="22" height="95" rx="3" />
+      <rect x="38" y="0" width="22" height="95" rx="3" />
+      <polygon points="60,0 82,0 60,95" />
+      <rect x="60" y="0" width="22" height="95" rx="3" />
+      <path d="M120,0 Q185,0 185,47 L163,47 Q163,22 120,22 Q95,22 95,47 L95,48 Q95,73 120,73 Q163,73 163,48 L185,48 Q185,95 120,95 Q70,95 70,47 Q70,0 120,0 Z" />
+      <text x="0" y="130" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" letter-spacing="9" font-weight="300" fill="#ffffff">EMPREENDIMENTOS</text>
     </svg>
     <div class="header-left">
       <h1>Dashboard · Contas a Pagar · MKT</h1>
@@ -388,7 +388,6 @@ function metricas() {
 
     totSaldo += s;
 
-    // Estrutura de acumulação segmentada por fornecedor
     if(!aFn[r.AGENTE]) {
       aFn[r.AGENTE] = {
         vencido: 0, 
@@ -409,7 +408,6 @@ function metricas() {
       vecSaldo += s;
       qv++;
       
-      // Acumula APENAS saldo vencido para o cálculo do alerta do fornecedor
       aFn[r.AGENTE].vencido += s;
       aFn[r.AGENTE].st = 'Vencido';
       
@@ -425,7 +423,6 @@ function metricas() {
       avCC += ccv;
       qa++;
       
-      // Acumula na gaveta "em dia"
       aFn[r.AGENTE].aVencer += s;
 
       const p = r.VENCIMENTO.split('/');
@@ -458,11 +455,10 @@ function metricas() {
   const filial  = Object.keys(aF).map(k=>({n:k,...aF[k]})).sort((a,b)=>b.t-a.t);
   const cat     = Object.keys(aC).map(k=>({n:k,...aC[k]})).sort((a,b)=>b.t-a.t);
   
-  // Ordenação principal da listagem de fornecedores baseada no saldo total em aberto
   const forn = Object.keys(aFn).map(k=>({
     ag: k,
     nc: k.length>24?k.slice(0,24)+'…':k,
-    s: aFn[k].totalGeral, // Mantém compatibilidade com a tabela de fornecedores
+    s: aFn[k].totalGeral,
     vencido: aFn[k].vencido,
     st: aFn[k].st,
     p: aFn[k].p,
@@ -471,7 +467,6 @@ function metricas() {
     cat: aFn[k].cat
   })).sort((a,b)=>b.s-a.s);
 
-  // CORREÇÃO DO ALERTA: Filtra e ranqueia estritamente pela coluna de saldo VENCIDO
   const vForn = forn.filter(f=>f.st==='Vencido').sort((a,b)=>b.vencido-a.vencido);
   const maior = vForn.length>0 ? vForn[0] : null;
 
@@ -490,7 +485,6 @@ function renderKPIs(m) {
   const pv=k.tot>0?(k.vec/k.tot*100).toFixed(1)+'%':'0%';
   const pa=k.tot>0?(k.av/k.tot*100).toFixed(1)+'%':'0%';
   
-  // Card roxo (maior fornecedor vencido) corrigido para ler m.maior.vencido
   const defs=[
     {l:'Saldo Total em Aberto',v:fmtK(k.tot),s:k.total+' parcelas',c:'blue'},
     {l:'Total Vencido',v:fmtK(k.vec),s:k.qv+' parcelas · '+pv,c:'red'},
@@ -502,7 +496,6 @@ function renderKPIs(m) {
     `<div class="kpi ${d.c}"><div class="kpi-label">${d.l}</div><div class="kpi-value">${d.v}</div><div class="kpi-sub">${d.s}</div></div>`
   ).join('');
 
-  // Alerta vermelho corrigido para ler m.maior.vencido
   if(m.maior && m.maior.d>30){
     document.getElementById('alertStrip').style.display='flex';
     document.getElementById('alertMsg').innerHTML=
