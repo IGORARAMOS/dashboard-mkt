@@ -5,13 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard MKT — INC Empreendimentos</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-.header-logo {
-  height: 42px;
-  width: auto;
-  object-fit: contain;
-  filter: var(--logo-filter);
-  transition: filter 0.3s ease;
-}
+<style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --bg:#f6f8fa;--surface:#ffffff;--surface2:#eaeef2;--border:#d0d7de;
@@ -20,7 +14,7 @@
   --green:#1a7f37;--green-s:#dafbe1;
   --orange:#9a6700;--purple:#8250df;
   --hgrad:linear-gradient(135deg,#1f2937,#111827);
-  --logo-filter: invert(1);
+  --logo-filter:invert(1);
 }
 @media(prefers-color-scheme:dark){
   :root{
@@ -30,22 +24,13 @@
     --green:#3fb950;--green-s:#1a2e1a;
     --orange:#d29922;--purple:#bc8cff;
     --hgrad:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-    --logo-filter: invert(0);
+    --logo-filter:invert(0);
   }
 }
 body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
 .header{background:var(--hgrad);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
-<div class="header">
-  <div class="header-brand">
-    <img src="logo fundo transparente.png" alt="INC Empreendimentos" class="header-logo">
-    
-    <div class="header-left">
-      <h1> MARKETING </h1>
-    </div>
-  </div>
-  <span class="badge-ref" id="badgeRef">Carregando...</span>
-</div>
-.header-logo{height:42px;width:auto;object-fit:contain;filter:var(--logo-filter);transition: filter 0.3s ease}
+.header-brand{display:flex;align-items:center;gap:14px}
+.header-logo{height:42px;width:auto;object-fit:contain;filter:var(--logo-filter);transition:filter 0.3s ease}
 .header-left h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:.3px}
 .header-left p{font-size:11px;color:#94a3b8;margin-top:2px}
 .badge-ref{background:rgba(255,255,255,0.12);color:#e2e8f0;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);white-space:nowrap}
@@ -287,7 +272,8 @@ function diasAtraso(dataVct, status) {
 // ═══════════════════════════════════════════════
 function normStatus(raw) {
   if(!raw) return 'Em aberto';
-  const s = String(raw).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const s = String(raw).trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   if(s==='vencido'||s==='atrasado'||s.startsWith('venc')) return 'Vencido';
   return 'Em aberto';
 }
@@ -369,7 +355,7 @@ async function init() {
 }
 
 // ═══════════════════════════════════════════════
-// MÉTRICAS (Lógica de Alerta Corrigida)
+// MÉTRICAS
 // ═══════════════════════════════════════════════
 function metricas() {
   const hj = new Date();
@@ -418,15 +404,10 @@ function metricas() {
     aC[r.CLA_DESCRICAO].t+=s;
     if(isV) aC[r.CLA_DESCRICAO].v+=s;
 
-    if(!aFn[r.AGENTE]) aFn[r.AGENTE]={s:0, v_saldo:0, st:'Em aberto', d:0, p:0, fil:r.NOME_FANTASIA, cat:r.CLA_DESCRICAO};
-    aFn[r.AGENTE].s+=s; 
-    aFn[r.AGENTE].p++;
-    
-    if(isV) {
-      aFn[r.AGENTE].v_saldo += s; // Acumula de forma separada estritamente o saldo vencido
-      aFn[r.AGENTE].st='Vencido';
-      if(r.DIAS_ATRASO > aFn[r.AGENTE].d) aFn[r.AGENTE].d = r.DIAS_ATRASO;
-    }
+    if(!aFn[r.AGENTE]) aFn[r.AGENTE]={s:0,st:'Em aberto',d:0,p:0,fil:r.NOME_FANTASIA,cat:r.CLA_DESCRICAO};
+    aFn[r.AGENTE].s+=s; aFn[r.AGENTE].p++;
+    if(r.DIAS_ATRASO>aFn[r.AGENTE].d) aFn[r.AGENTE].d=r.DIAS_ATRASO;
+    if(isV) aFn[r.AGENTE].st='Vencido';
   });
 
   const mensal = Object.keys(aM).map(k=>{
@@ -437,22 +418,14 @@ function metricas() {
 
   const filial  = Object.keys(aF).map(k=>({n:k,...aF[k]})).sort((a,b)=>b.t-a.t);
   const cat     = Object.keys(aC).map(k=>({n:k,...aC[k]})).sort((a,b)=>b.t-a.t);
-  
-  // Ordenação geral dos fornecedores pelo saldo aberto total (Tabela e Gráfico)
-  const forn = Object.keys(aFn).map(k=>({ag:k,nc:k.length>24?k.slice(0,24)+'…':k,...aFn[k]})).sort((a,b)=>b.s-a.s);
-  
-  // Identificação correta e isolada do maior fornecedor com base APENAS em itens já vencidos
-  const fornecedoresVencidos = Object.keys(aFn)
-    .map(k=>({ag:k,nc:k.length>24?k.slice(0,24)+'…':k,...aFn[k]}))
-    .filter(f=>f.v_saldo > 0)
-    .sort((a,b)=>b.v_saldo - a.v_saldo);
-    
-  const maiorVencido = fornecedoresVencidos.length > 0 ? fornecedoresVencidos[0] : null;
+  const forn    = Object.keys(aFn).map(k=>({ag:k,nc:k.length>24?k.slice(0,24)+'…':k,...aFn[k]})).sort((a,b)=>b.s-a.s);
+  const vForn   = forn.filter(f=>f.st==='Vencido');
+  const maior   = vForn.length>0?vForn[0]:null;
 
   return {
     kpi:{tot:totSaldo, vec:vecSaldo, av:avCC, qv, qa, total:DADOS.length, flux:fluxCC, proxMes:MES_EXT[pMes]},
     aging:Object.keys(agFx).map(k=>({f:k,...agFx[k]})),
-    mensal, filial, cat, forn, maior: maiorVencido
+    mensal, filial, cat, forn, maior
   };
 }
 
@@ -463,29 +436,21 @@ function renderKPIs(m) {
   const k=m.kpi;
   const pv=k.tot>0?(k.vec/k.tot*100).toFixed(1)+'%':'0%';
   const pa=k.tot>0?(k.av/k.tot*100).toFixed(1)+'%':'0%';
-  
-  // Exibe o v_saldo (estritamente vencido) no bloco roxo do KPI lateral se aplicável
-  const valMaiorBlock = m.maior ? m.maior.v_saldo : 0;
-  const subTxtBlock = m.maior ? m.maior.nc+' · '+m.maior.d+'d' : 'Nenhum';
-
   const defs=[
     {l:'Saldo Total em Aberto',v:fmtK(k.tot),s:k.total+' parcelas',c:'blue'},
     {l:'Total Vencido',v:fmtK(k.vec),s:k.qv+' parcelas · '+pv,c:'red'},
     {l:'A Vencer (CC MKT)',v:fmtK(k.av),s:k.qa+' parcelas · '+pa,c:'green'},
     {l:'Fluxo — '+k.proxMes,v:fmtK(k.flux),s:'Vencimentos do mês seguinte',c:'orange'},
-    {l:'Maior Fornecedor Vencido',v:fmtK(valMaiorBlock),s:subTxtBlock,c:'purple'},
+    {l:'Maior Fornecedor Vencido',v:m.maior?fmtK(m.maior.s):'R$ 0',s:m.maior?m.maior.nc+' · '+m.maior.d+'d':'Nenhum',c:'purple'},
   ];
   document.getElementById('kpiGrid').innerHTML=defs.map(d=>
     `<div class="kpi ${d.c}"><div class="kpi-label">${d.l}</div><div class="kpi-value">${d.v}</div><div class="kpi-sub">${d.s}</div></div>`
   ).join('');
 
-  // Fix da Tarja vermelha de Alerta Urgente: Considera apenas a somatória de itens Vencidos (v_saldo)
-  if(m.maior && m.maior.d > 30){
+  if(m.maior&&m.maior.d>30){
     document.getElementById('alertStrip').style.display='flex';
     document.getElementById('alertMsg').innerHTML=
-      `<strong style="color:var(--red)">${m.maior.ag}</strong>: possui <strong style="color:var(--red)">${fmt(m.maior.v_saldo)}</strong> estritamente vencidos há <strong>${m.maior.d} dias</strong>. Regularize com urgência.`;
-  } else {
-    document.getElementById('alertStrip').style.display='none';
+      `<strong style="color:var(--red)">${m.maior.ag}</strong>: ${fmt(m.maior.s)} vencido há <strong style="color:var(--red)">${m.maior.d} dias</strong>. Regularize com urgência.`;
   }
 }
 
@@ -702,6 +667,9 @@ function renderReg(){
 
 function pag(d){pagAtual+=d;renderReg();}
 
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
 function pg(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
