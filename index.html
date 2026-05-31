@@ -14,7 +14,7 @@
   --green:#1a7f37;--green-s:#dafbe1;
   --orange:#9a6700;--purple:#8250df;
   --hgrad:linear-gradient(135deg,#1f2937,#111827);
-  --logo-color:#000000;
+  --logo-filter: invert(1); /* Inverte a logo branca para preto no tema claro */
 }
 @media(prefers-color-scheme:dark){
   :root{
@@ -24,14 +24,13 @@
     --green:#3fb950;--green-s:#1a2e1a;
     --orange:#d29922;--purple:#bc8cff;
     --hgrad:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-    --logo-color:#ffffff;
+    --logo-filter: none; /* Mantém branca original no tema escuro */
   }
 }
 body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
 .header{background:var(--hgrad);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
 .header-brand{display:flex;align-items:center;gap:18px}
-.header-logo{height:44px;width:auto;display:block}
-.header-logo path, .header-logo rect, .header-logo text{fill:var(--logo-color)}
+.header-logo{height:42px;width:auto;display:block;object-fit:contain;filter:var(--logo-filter)}
 .header-left h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:.3px}
 .header-left p{font-size:11px;color:#94a3b8;margin-top:2px}
 .badge-ref{background:rgba(255,255,255,0.12);color:#e2e8f0;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);white-space:nowrap}
@@ -110,10 +109,8 @@ td{padding:8px 11px;white-space:nowrap}
 
 <div class="header">
   <div class="header-brand">
-    <svg class="header-logo" viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg">
-      <path d="M15 15h26v92H15V15zm48 0h24l40 56V15h24v92h-22L87 49v58H63V15zm112 46c0-28 20-48 50-48 24 0 40 13 46 32h-26c-4-10-12-16-20-16-16 0-24 13-24 32s8 32 24 32c9 0 17-6 20-16h26c-6 19-22 32-46 32-30 0-50-20-50-48z"/>
-      <text x="14" y="132" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" letter-spacing="10" font-weight="300">EMPREENDIMENTOS</text>
-    </svg>
+    <!-- Imagem de logo substituída conforme solicitado -->
+    <img class="header-logo" src="logo fundo transparente.png" alt="Logo INC">
     <div class="header-left">
       <h1>Dashboard · Contas a Pagar · MKT</h1>
       <p>INC Empreendimentos — JF · Uberlândia · Uberaba · São João del-Rei · SJRP · SJC</p>
@@ -130,6 +127,7 @@ td{padding:8px 11px;white-space:nowrap}
   <button class="nav-btn" onclick="pg('p-reg',this)">🔍 Todos os Registros</button>
 </nav>
 
+<!-- VISÃO GERAL -->
 <div id="p-geral" class="page active">
   <div class="alert-strip" id="alertStrip" style="display:none"><span style="font-size:16px">🚨</span><div id="alertMsg"></div></div>
   <div class="kpi-grid" id="kpiGrid"></div>
@@ -143,6 +141,7 @@ td{padding:8px 11px;white-space:nowrap}
   </div>
 </div>
 
+<!-- FORNECEDORES -->
 <div id="p-forn" class="page">
   <div class="card" style="margin-bottom:14px"><div class="card-title"><span class="ic">👥</span>Top 20 Fornecedores — Saldo em Aberto</div><div style="position:relative;height:440px"><canvas id="cForn"></canvas></div></div>
   <div class="card">
@@ -154,6 +153,7 @@ td{padding:8px 11px;white-space:nowrap}
   </div>
 </div>
 
+<!-- FILIAIS -->
 <div id="p-fil" class="page">
   <div class="card" style="margin-bottom:14px"><div class="card-title"><span class="ic">🏢</span>Vencido vs A Vencer por Filial</div><div style="position:relative;height:360px"><canvas id="cFilStack"></canvas></div></div>
   <div class="card">
@@ -165,6 +165,7 @@ td{padding:8px 11px;white-space:nowrap}
   </div>
 </div>
 
+<!-- CATEGORIAS -->
 <div id="p-cat" class="page">
   <div class="charts-row">
     <div class="card"><div class="card-title"><span class="ic">🥧</span>Distribuição por Categoria</div><div style="position:relative;height:310px"><canvas id="cPie"></canvas></div></div>
@@ -179,6 +180,7 @@ td{padding:8px 11px;white-space:nowrap}
   </div>
 </div>
 
+<!-- REGISTROS -->
 <div id="p-reg" class="page">
   <div class="filters">
     <input type="text" id="fBusca" placeholder="🔍  Buscar fornecedor, filial, categoria..." oninput="filtrar()">
@@ -252,7 +254,6 @@ function parseData(s) {
     const d=+p[0], m=+p[1], a=+p[2];
     if(d&&m&&a&&a>2000) return new Date(a, m-1, d);
   }
-  // Tratamento fallback para ISO string obtida do JSON sheets
   if(str.includes('-')) {
     const dIso = new Date(str);
     if(!isNaN(dIso.getTime())) return new Date(dIso.getFullYear(), dIso.getMonth(), dIso.getDate());
@@ -288,7 +289,7 @@ function aging(dias) {
 }
 
 // ═══════════════════════════════════════════════
-// AGREGADOR / CARGA COMPLETA DE DADOS
+// AGREGADOR / CARGA COMPLETA COM TRY-CATCH SEGURO
 // ═══════════════════════════════════════════════
 async function init() {
   show('ls'); hide('es');
@@ -299,29 +300,44 @@ async function init() {
     const lista = Array.isArray(raw) ? raw : (raw.registros||raw.data||[]);
     if(!lista.length) throw new Error('A API não retornou linhas utilizáveis.');
 
+    const hjZero = (() => { const h=new Date(); return new Date(h.getFullYear(),h.getMonth(),h.getDate()); })();
+
     DADOS = lista.map(rec => {
-      const agente  = String(rec.AGENTE||rec.agente||'').trim()||'Sem Fornecedor';
-      const filial  = String(rec.NOME_FANTASIA||rec.nome_fantasia||'').trim()||'Sem Filial';
-      const cla     = String(rec.CLA_DESCRICAO||rec.cla_descricao||'').trim()||'Outros';
-      const vctStr  = String(rec.VENCIMENTO||rec.vencimento||'').trim();
-      const stRaw   = String(rec.STATUS_VENCIMENTO||rec.status_vencimento||rec.Status||rec.STATUS||'').trim();
+      try {
+        if(!rec) return null;
+        const agente  = String(rec.AGENTE||rec.agente||'').trim()||'Sem Fornecedor';
+        const filial  = String(rec.NOME_FANTASIA||rec.nome_fantasia||'').trim()||'Sem Filial';
+        const cla     = String(rec.CLA_DESCRICAO||rec.cla_descricao||'').trim()||'Outros';
+        const vctStr  = String(rec.VENCIMENTO||rec.vencimento||'').trim();
+        const stRaw   = String(rec.STATUS_VENCIMENTO||rec.status_vencimento||rec.Status||rec.STATUS||'').trim();
 
-      const valor   = parseMoeda(rec.VALOR||rec.valor);
-      const saldo   = parseMoeda(rec.SALDO_EM_ABERTO||rec.saldo_em_aberto||rec.SaldoEmAberto);
-      const ccValor = parseMoeda(rec.CC_Valor||rec.cc_valor||rec.CC_VALOR||rec.CCValor||rec.ccValor||rec.cc_valor);
+        const valor   = parseMoeda(rec.VALOR||rec.valor);
+        const saldo   = parseMoeda(rec.SALDO_EM_ABERTO||rec.saldo_em_aberto||rec.SaldoEmAberto);
+        const ccValor = parseMoeda(rec.CC_Valor||rec.cc_valor||rec.CC_VALOR||rec.CCValor||rec.ccValor||rec.cc_valor);
 
-      const dataVct = parseData(vctStr);
-      const vctTs   = dataVct ? dataVct.getTime() : 0;
-      const status  = normStatus(stRaw, dataVct);
-      const dias    = diasAtraso(dataVct, status);
+        const dataVct = parseData(vctStr);
+        const vctTs   = dataVct ? dataVct.getTime() : 0;
+        
+        let status;
+        if(dataVct && dataVct < hjZero) {
+          status = 'Vencido';
+        } else {
+          status = normStatus(stRaw, dataVct);
+        }
+        
+        const dias    = diasAtraso(dataVct, status);
 
-      return {
-        AGENTE:agente, NOME_FANTASIA:filial, CLA_DESCRICAO:cla,
-        VENCIMENTO:vctStr, VCT_TS:vctTs, STATUS_VENCIMENTO:status,
-        VALOR:valor, CC_VALOR:ccValor, SALDO_EM_ABERTO:saldo,
-        DIAS_ATRASO:dias, AGING:aging(dias)
-      };
-    });
+        return {
+          AGENTE:agente, NOME_FANTASIA:filial, CLA_DESCRICAO:cla,
+          VENCIMENTO:vctStr, VCT_TS:vctTs, STATUS_VENCIMENTO:status,
+          VALOR:valor, CC_VALOR:ccValor, SALDO_EM_ABERTO:saldo,
+          DIAS_ATRASO:dias, AGING:aging(dias)
+        };
+      } catch(err) {
+        console.error("Ignorando linha com erro:", err, rec);
+        return null;
+      }
+    }).filter(item => item !== null);
 
     const agora = new Date();
     document.getElementById('badgeRef').textContent =
@@ -349,7 +365,6 @@ async function init() {
 function metricas() {
   const hj = new Date();
   
-  // Próximo mês absoluto
   let pMes = hj.getMonth() + 1;
   let pAno = hj.getFullYear();
   if(pMes > 11) { pMes = 0; pAno++; }
@@ -363,7 +378,6 @@ function metricas() {
   const aM={};
   const aF={},aC={},aFn={};
   
-  // Variáveis para rastrear estritamente o maior fornecedor com saldo vencido real
   const vencidosPorFornecedorReal = {};
 
   DADOS.forEach(r => {
@@ -376,13 +390,11 @@ function metricas() {
     if(isV) {
       vecSaldo += s; 
       qv++;
-      // Aging cumulativo usa o valor CC_VALOR destinado ao marketing das faixas vencidas
       if(r.AGING && agFx[r.AGING]){
         agFx[r.AGING].v += ccv;
         agFx[r.AGING].q++;
       }
       
-      // Agrupador para monitoramento real de fornecedor devedor
       if(!vencidosPorFornecedorReal[r.AGENTE]) {
         vencidosPorFornecedorReal[r.AGENTE] = { totalVencidoReal: 0, maxDias: 0 };
       }
@@ -391,11 +403,9 @@ function metricas() {
         vencidosPorFornecedorReal[r.AGENTE].maxDias = r.DIAS_ATRASO;
       }
     } else {
-      // A Vencer: Usa o valor alocado da coluna CC_VALOR do Centro de Custo MKT
       avCC += ccv;
       qa++;
 
-      // Projeção por competência mensal futura do CC MKT
       if(r.VENCIMENTO) {
         const p = r.VENCIMENTO.split('/');
         if(p.length===3) {
@@ -411,17 +421,14 @@ function metricas() {
       }
     }
 
-    // Distribuição de Filiais (Baseada no Saldo em Aberto Real)
     if(!aF[r.NOME_FANTASIA]) aF[r.NOME_FANTASIA]={v:0,a:0,t:0};
     aF[r.NOME_FANTASIA].t += s;
     if(isV) aF[r.NOME_FANTASIA].v += s; else aF[r.NOME_FANTASIA].a += s;
 
-    // Categorias CLA (Baseada no Saldo em Aberto Real)
     if(!aC[r.CLA_DESCRICAO]) aC[r.CLA_DESCRICAO]={v:0,t:0};
     aC[r.CLA_DESCRICAO].t += s;
     if(isV) aC[r.CLA_DESCRICAO].v += s;
 
-    // Fornecedores detalhados gerais
     if(!aFn[r.AGENTE]) aFn[r.AGENTE]={s:0,st:'Em aberto',d:0,p:0,fil:r.NOME_FANTASIA,cat:r.CLA_DESCRICAO};
     aFn[r.AGENTE].s += s; 
     aFn[r.AGENTE].p++;
@@ -439,7 +446,6 @@ function metricas() {
   const cat     = Object.keys(aC).map(k=>({n:k,...aC[k]})).sort((a,b)=>b.t-a.t);
   const forn    = Object.keys(aFn).map(k=>({ag:k,nc:k.length>24?k.slice(0,24)+'…':k,...aFn[k]})).sort((a,b)=>b.s-a.s);
 
-  // Determinar dinamicamente qual fornecedor possui o maior montante VENCIDO REAL (Sem somar saldos futuros)
   let maiorFornVencidoObj = null;
   let maiorValorVencidoEncontrado = 0;
 
@@ -480,7 +486,6 @@ function renderKPIs(m) {
     `<div class="kpi ${d.c}"><div class="kpi-label">${d.l}</div><div class="kpi-value">${d.v}</div><div class="kpi-sub">${d.s}</div></div>`
   ).join('');
 
-  // Faixa vermelha de urgência — Considera estritamente apenas o montante vencido real
   if(m.maior && m.maior.dias > 0){
     document.getElementById('alertStrip').style.display='flex';
     document.getElementById('alertMsg').innerHTML=
@@ -501,7 +506,6 @@ const PAL=['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364'
 const GR='rgba(255,255,255,0.06)';
 
 function renderGraficos(m) {
-  // Reset de segurança para evitar sobreposição de canvas re-renderizados
   document.querySelectorAll('canvas').forEach(canvas => {
     const chartExist = Chart.getChart(canvas.id);
     if(chartExist) chartExist.destroy();
@@ -511,7 +515,6 @@ function renderGraficos(m) {
     plugins:{legend:{display:false}},
     scales:{x:{grid:{color:GR},ticks:{callback:fmtK}},y:{grid:{color:GR}}}};
 
-  // Aging do MKT (Exibe faixas por CC_VALOR alocado)
   new Chart('cAging',{type:'bar',
     data:{labels:m.aging.map(d=>`${d.f} (${d.q})`),
       datasets:[{data:m.aging.map(d=>d.v),backgroundColor:[C.r,C.o,C.y,'#a32d2d'],borderRadius:5,borderWidth:0}]},
@@ -519,7 +522,6 @@ function renderGraficos(m) {
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}}}
   });
 
-  // Projeção Mensal do Marketing (Utiliza CC_VALOR das parcelas em aberto futuras)
   new Chart('cMensal',{type:'bar',
     data:{labels:m.mensal.map(d=>d.mes),
       datasets:[{data:m.mensal.map(d=>d.v),borderRadius:5,borderWidth:0,
@@ -662,7 +664,7 @@ function filtrar() {
   pagAtual=1; renderReg();
 }
 
-function limpar(){['fBusca','fStatus','fFilial','fCat','fAging'].forEach(id=>{document.getElementById(id).value=''});filtrar();}
+function limpar()){['fBusca','fStatus','fFilial','fCat','fAging'].forEach(id=>{document.getElementById(id).value=''});filtrar();}
 
 function ord(col,th){
   if(colOrd===col) dirOrd*=-1; else{colOrd=col;dirOrd=-1;}
@@ -673,4 +675,59 @@ function ord(col,th){
 
 function agingBadge(r){
   if(!r.AGING) return '<span style="color:var(--muted);font-size:10px">—</span>';
-  const m={'1–30 dias':'background:#3d1
+  const m={'1–30 dias':'background:#3d1a1a;color:#f85149','31–60 dias':'background:#2d2005;color:#d29922',
+    '61–90 dias':'background:#1a1a0a;color:#e3b341','90+ dias':'background:#5a1010;color:#ff6b6b;font-weight:800'};
+  return `<span class="badge" style="${m[r.AGING]||''}">${r.AGING}</span>`;
+}
+
+function renderReg(){
+  const sorted=[...filtrados].sort((a,b)=>{
+    const va=a[colOrd]||0, vb=b[colOrd]||0;
+    if(typeof va==='number' && typeof vb==='number'){
+      return (va-vb)*dirOrd;
+    }
+    return String(va).localeCompare(String(vb),'pt-BR')*dirOrd;
+  });
+
+  const total=sorted.length;
+  const pag=sorted.slice((pagAtual-1)*TAM_PAG, pagAtual*TAM_PAG);
+  
+  document.getElementById('tbReg').innerHTML=pag.map(r=>{
+    const v=r.STATUS_VENCIMENTO==='Vencido';
+    const diasTxt = v && r.DIAS_ATRASO>0 ? `<span style="${dcls(r.DIAS_ATRASO)}">${r.DIAS_ATRASO} dias</span>` : '—';
+    return `<tr class="${v?'rv':''}">
+      <td><span class="badge ${v?'bv':'ba'}">${v?'VENCIDO':'EM ABERTO'}</span></td>
+      <td>${agingBadge(r)}</td>
+      <td style="font-size:11px;max-width:150px;white-space:normal">${r.NOME_FANTASIA}</td>
+      <td style="font-size:11px;max-width:190px;white-space:normal">${r.AGENTE}</td>
+      <td>${r.VENCIMENTO}</td>
+      <td style="text-align:right">${fmt(r.VALOR)}</td>
+      <td style="text-align:right;color:var(--accent);font-weight:600">${fmt(r.CC_VALOR)}</td>
+      <td style="text-align:right;font-weight:600;color:var(${v?'--red':'--accent'})">${fmt(r.SALDO_EM_ABERTO)}</td>
+      <td style="text-align:center">${diasTxt}</td>
+      <td style="font-size:11px">${r.CLA_DESCRICAO}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('fCount').textContent=total+' registros localizados';
+  document.getElementById('pInfo').textContent=`Pág. ${pagAtual} de ${Math.ceil(total/TAM_PAG)||1}`;
+  document.getElementById('bPrev').disabled=pagAtual===1;
+  document.getElementById('bNext').disabled=pagAtual>=Math.ceil(total/TAM_PAG);
+}
+
+// Navegação entre abas
+function pag(d){pagAtual+=d;renderReg();}
+
+function pg(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+function show(id){document.getElementById(id).style.display='flex';}
+function hide(id){document.getElementById(id).style.display='none';}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
