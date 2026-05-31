@@ -14,7 +14,7 @@
   --green:#1a7f37;--green-s:#dafbe1;
   --orange:#9a6700;--purple:#8250df;
   --hgrad:linear-gradient(135deg,#1f2937,#111827);
-  --logo-filter: invert(1); /* Inverte a logo branca para preto no tema claro */
+  --logo-filter:invert(1);
 }
 @media(prefers-color-scheme:dark){
   :root{
@@ -24,13 +24,13 @@
     --green:#3fb950;--green-s:#1a2e1a;
     --orange:#d29922;--purple:#bc8cff;
     --hgrad:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-    --logo-filter: none; /* Mantém branca original no tema escuro */
+    --logo-filter:invert(0);
   }
 }
 body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
 .header{background:var(--hgrad);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
-.header-brand{display:flex;align-items:center;gap:18px}
-.header-logo{height:42px;width:auto;display:block;object-fit:contain;filter:var(--logo-filter)}
+.header-brand{display:flex;align-items:center;gap:14px}
+.header-logo{height:38px;width:auto;object-fit:contain;filter:var(--logo-filter)}
 .header-left h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:.3px}
 .header-left p{font-size:11px;color:#94a3b8;margin-top:2px}
 .badge-ref{background:rgba(255,255,255,0.12);color:#e2e8f0;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);white-space:nowrap}
@@ -100,7 +100,7 @@ td{padding:8px 11px;white-space:nowrap}
 </head>
 <body>
 
-<div id="ls"><div class="sp"></div><p>Carregando dados estruturados...</p></div>
+<div id="ls"><div class="sp"></div><p>Carregando dados...</p></div>
 <div id="es">
   <p style="color:var(--red);font-size:15px;font-weight:600">⚠ Falha ao carregar dados</p>
   <p id="emsg" style="color:var(--muted);font-size:12px"></p>
@@ -109,14 +109,26 @@ td{padding:8px 11px;white-space:nowrap}
 
 <div class="header">
   <div class="header-brand">
-    <!-- Imagem de logo substituída conforme solicitado -->
-    <img class="header-logo" src="logo fundo transparente.png" alt="Logo INC">
+    <!-- Logo INC SVG — branca no dark, preta no light via filter -->
+    <svg class="header-logo" viewBox="0 0 520 180" xmlns="http://www.w3.org/2000/svg" style="height:42px;width:auto;filter:var(--logo-filter)">
+      <!-- INC lettering -->
+      <!-- I -->
+      <rect x="10" y="10" width="28" height="120" rx="4" fill="white"/>
+      <!-- N -->
+      <rect x="58" y="10" width="28" height="120" rx="4" fill="white"/>
+      <polygon points="86,10 114,10 86,130" fill="white"/>
+      <rect x="86" y="10" width="28" height="120" rx="4" fill="white"/>
+      <!-- C -->
+      <path d="M150,10 Q240,10 240,70 L212,70 Q212,38 150,38 Q118,38 118,70 L118,70 Q118,102 150,102 Q212,102 212,70 L240,70 Q240,130 150,130 Q90,130 90,70 Q90,10 150,10 Z" fill="white"/>
+      <!-- EMPREENDIMENTOS text -->
+      <text x="10" y="168" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="22" letter-spacing="8" font-weight="300" fill="white">EMPREENDIMENTOS</text>
+    </svg>
     <div class="header-left">
       <h1>Dashboard · Contas a Pagar · MKT</h1>
       <p>INC Empreendimentos — JF · Uberlândia · Uberaba · São João del-Rei · SJRP · SJC</p>
     </div>
   </div>
-  <span class="badge-ref" id="badgeRef">Sincronizando...</span>
+  <span class="badge-ref" id="badgeRef">Carregando...</span>
 </div>
 
 <nav class="nav">
@@ -136,7 +148,7 @@ td{padding:8px 11px;white-space:nowrap}
     <div class="card"><div class="card-title"><span class="ic">📅</span>A Vencer — Projeção Mensal (CC MKT)</div><div style="position:relative;height:210px"><canvas id="cMensal"></canvas></div></div>
   </div>
   <div class="charts-row">
-    <div class="card"><div class="card-title"><span class="ic">🏢</span>Top 8 Filiais (Saldo Aberto)</div><div style="position:relative;height:250px"><canvas id="cFilial"></canvas></div></div>
+    <div class="card"><div class="card-title"><span class="ic">🏢</span>Top 8 Filiais</div><div style="position:relative;height:250px"><canvas id="cFilial"></canvas></div></div>
     <div class="card"><div class="card-title"><span class="ic">📂</span>Saldo por Categoria</div><div style="position:relative;height:250px"><canvas id="cCat"></canvas></div></div>
   </div>
 </div>
@@ -147,7 +159,7 @@ td{padding:8px 11px;white-space:nowrap}
   <div class="card">
     <div class="card-title"><span class="ic">📋</span>Detalhe por Fornecedor</div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Fornecedor</th><th>Status</th><th>Filial Principal</th><th>Categoria</th><th>Parcelas</th><th>Dias em Atraso Max</th><th>Saldo em Aberto</th></tr></thead>
+      <thead><tr><th>Fornecedor</th><th>Status</th><th>Filial Principal</th><th>Categoria</th><th>Parcelas</th><th>Dias em Atraso</th><th>Saldo em Aberto</th></tr></thead>
       <tbody id="tbForn"></tbody>
     </table></div>
   </div>
@@ -221,21 +233,25 @@ td{padding:8px 11px;white-space:nowrap}
 
 <script>
 // ═══════════════════════════════════════════════
-// CONFIGURAÇÃO ENDPOINT
+// CONFIGURAÇÃO
 // ═══════════════════════════════════════════════
 const API = 'https://script.google.com/macros/s/AKfycbw3PRhwQRz5TtHqmlz_UWUwWAam4onXPD_ZlI66zV0vkO6XlogjA1N0ELDnw-qRGt1R/exec';
 
 let DADOS = [], filtrados = [];
-let colOrd = 'DIAS_ATRASO', dirOrd = -1;
+let colOrd = 'SALDO_EM_ABERTO', dirOrd = -1;
 let pagAtual = 1;
 const TAM_PAG = 30;
 
 // ═══════════════════════════════════════════════
-// FORMATADORES FORMATO BR
+// FORMATADORES
 // ═══════════════════════════════════════════════
 const fmt  = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtK = v => { v=Number(v||0); if(Math.abs(v)>=1e6) return 'R$ '+(v/1e6).toFixed(1).replace('.',',')+'M'; if(Math.abs(v)>=1000) return 'R$ '+(v/1000).toFixed(0)+'K'; return fmt(v); };
+const fmtK = v => { v=Number(v||0); if(v>=1e6) return 'R$ '+(v/1e6).toFixed(1).replace('.',',')+'M'; if(v>=1000) return 'R$ '+(v/1000).toFixed(0)+'K'; return fmt(v); };
 
+// ═══════════════════════════════════════════════
+// PARSER DE MOEDA ROBUSTO
+// Suporta: "1.234,56"  "1234.56"  1234.56  "R$ 1.234,56"
+// ═══════════════════════════════════════════════
 function parseMoeda(v) {
   if(v===null||v===undefined||v==='') return 0;
   if(typeof v==='number') return isFinite(v)?v:0;
@@ -246,40 +262,46 @@ function parseMoeda(v) {
   return isFinite(n)?n:0;
 }
 
+// ═══════════════════════════════════════════════
+// PARSER DE DATA BR: "DD/MM/AAAA" → Date sem fuso
+// ═══════════════════════════════════════════════
 function parseData(s) {
-  if(!s) return null;
-  const str = String(s).trim();
-  const p = str.split('/');
-  if(p.length===3) {
-    const d=+p[0], m=+p[1], a=+p[2];
-    if(d&&m&&a&&a>2000) return new Date(a, m-1, d);
-  }
-  if(str.includes('-')) {
-    const dIso = new Date(str);
-    if(!isNaN(dIso.getTime())) return new Date(dIso.getFullYear(), dIso.getMonth(), dIso.getDate());
-  }
-  return null;
+  if(!s||typeof s!=='string') return null;
+  const p = s.trim().split('/');
+  if(p.length!==3) return null;
+  const d=+p[0], m=+p[1], a=+p[2];
+  if(!d||!m||!a||a<2000||a>2100) return null;
+  return new Date(a, m-1, d);
 }
 
+// ═══════════════════════════════════════════════
+// DIAS DE ATRASO DINÂMICO (recalcula vs. hoje)
+// Retorna 0 se não vencido, ou os dias de atraso
+// ═══════════════════════════════════════════════
 function diasAtraso(dataVct, status) {
-  if(!dataVct || status !== 'Vencido') return 0;
+  if(!dataVct) return 0;
+  // Só conta dias de atraso se status = Vencido
+  if(status !== 'Vencido') return 0;
   const hj = new Date();
   const hjZero = new Date(hj.getFullYear(), hj.getMonth(), hj.getDate());
-  const diff = hjZero.getTime() - dataVct.getTime();
+  const diff = hjZero - dataVct; // ms
   return diff > 0 ? Math.floor(diff/86400000) : 0;
 }
 
-function normStatus(raw, dataVct) {
-  const hj = new Date();
-  const hjZero = new Date(hj.getFullYear(), hj.getMonth(), hj.getDate());
-  if(dataVct && dataVct < hjZero) return 'Vencido';
-  
+// ═══════════════════════════════════════════════
+// NORMALIZA STATUS (acentos, case, espaços)
+// ═══════════════════════════════════════════════
+function normStatus(raw) {
   if(!raw) return 'Em aberto';
-  const s = String(raw).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const s = String(raw).trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   if(s==='vencido'||s==='atrasado'||s.startsWith('venc')) return 'Vencido';
   return 'Em aberto';
 }
 
+// ═══════════════════════════════════════════════
+// AGING LABEL
+// ═══════════════════════════════════════════════
 function aging(dias) {
   if(dias<=0) return '';
   if(dias<=30) return '1–30 dias';
@@ -289,7 +311,7 @@ function aging(dias) {
 }
 
 // ═══════════════════════════════════════════════
-// AGREGADOR / CARGA COMPLETA COM TRY-CATCH SEGURO
+// CARGA DOS DADOS
 // ═══════════════════════════════════════════════
 async function init() {
   show('ls'); hide('es');
@@ -298,46 +320,46 @@ async function init() {
     if(!r.ok) throw new Error('HTTP '+r.status);
     const raw = await r.json();
     const lista = Array.isArray(raw) ? raw : (raw.registros||raw.data||[]);
-    if(!lista.length) throw new Error('A API não retornou linhas utilizáveis.');
+    if(!lista.length) throw new Error('API retornou 0 registros');
 
     const hjZero = (() => { const h=new Date(); return new Date(h.getFullYear(),h.getMonth(),h.getDate()); })();
 
     DADOS = lista.map(rec => {
-      try {
-        if(!rec) return null;
-        const agente  = String(rec.AGENTE||rec.agente||'').trim()||'Sem Fornecedor';
-        const filial  = String(rec.NOME_FANTASIA||rec.nome_fantasia||'').trim()||'Sem Filial';
-        const cla     = String(rec.CLA_DESCRICAO||rec.cla_descricao||'').trim()||'Outros';
-        const vctStr  = String(rec.VENCIMENTO||rec.vencimento||'').trim();
-        const stRaw   = String(rec.STATUS_VENCIMENTO||rec.status_vencimento||rec.Status||rec.STATUS||'').trim();
+      // ── texto ──
+      const agente  = String(rec.AGENTE||rec.agente||'').trim()||'Sem Fornecedor';
+      const filial  = String(rec.NOME_FANTASIA||rec.nome_fantasia||'').trim()||'Sem Filial';
+      const cla     = String(rec.CLA_DESCRICAO||rec.cla_descricao||'').trim()||'Outros';
+      const vctStr  = String(rec.VENCIMENTO||rec.vencimento||'').trim();
+      const stRaw   = String(rec.STATUS_VENCIMENTO||rec.status_vencimento||rec.Status||rec.STATUS||'').trim();
 
-        const valor   = parseMoeda(rec.VALOR||rec.valor);
-        const saldo   = parseMoeda(rec.SALDO_EM_ABERTO||rec.saldo_em_aberto||rec.SaldoEmAberto);
-        const ccValor = parseMoeda(rec.CC_Valor||rec.cc_valor||rec.CC_VALOR||rec.CCValor||rec.ccValor||rec.cc_valor);
+      // ── monetário (parser robusto) ──
+      const valor   = parseMoeda(rec.VALOR||rec.valor);
+      const saldo   = parseMoeda(rec.SALDO_EM_ABERTO||rec.saldo_em_aberto||rec.SaldoEmAberto);
+      // CC_Valor: valor destinado ao centro de custo MKT (o que realmente será pago)
+      const ccValor = parseMoeda(rec.CC_Valor||rec.cc_valor||rec.CC_VALOR||rec.CCValor||rec.ccValor);
 
-        const dataVct = parseData(vctStr);
-        const vctTs   = dataVct ? dataVct.getTime() : 0;
-        
-        let status;
-        if(dataVct && dataVct < hjZero) {
-          status = 'Vencido';
-        } else {
-          status = normStatus(stRaw, dataVct);
-        }
-        
-        const dias    = diasAtraso(dataVct, status);
+      // ── data e status ──
+      const dataVct = parseData(vctStr);
+      const vctTs   = dataVct ? dataVct.getTime() : 0;
 
-        return {
-          AGENTE:agente, NOME_FANTASIA:filial, CLA_DESCRICAO:cla,
-          VENCIMENTO:vctStr, VCT_TS:vctTs, STATUS_VENCIMENTO:status,
-          VALOR:valor, CC_VALOR:ccValor, SALDO_EM_ABERTO:saldo,
-          DIAS_ATRASO:dias, AGING:aging(dias)
-        };
-      } catch(err) {
-        console.error("Ignorando linha com erro:", err, rec);
-        return null;
+      // ── status: data vencida prevalece sobre campo texto ──
+      let status;
+      if(dataVct && dataVct < hjZero) {
+        status = 'Vencido';
+      } else {
+        status = normStatus(stRaw);
       }
-    }).filter(item => item !== null);
+
+      // ── dias de atraso: só calcula se Vencido ──
+      const dias = diasAtraso(dataVct, status);
+
+      return {
+        AGENTE:agente, NOME_FANTASIA:filial, CLA_DESCRICAO:cla,
+        VENCIMENTO:vctStr, VCT_TS:vctTs, STATUS_VENCIMENTO:status,
+        VALOR:valor, CC_VALOR:ccValor, SALDO_EM_ABERTO:saldo,
+        DIAS_ATRASO:dias, AGING:aging(dias)
+      };
+    });
 
     const agora = new Date();
     document.getElementById('badgeRef').textContent =
@@ -360,82 +382,82 @@ async function init() {
 }
 
 // ═══════════════════════════════════════════════
-// CÁLCULO DE MÉTRICAS DO MARKETING
+// MÉTRICAS
+// REGRAS:
+// - Vencido KPI: soma SALDO_EM_ABERTO dos vencidos
+// - A Vencer KPI: soma CC_VALOR dos não vencidos (valor MKT)
+// - Aging (vencidos por faixa): usa CC_VALOR
+// - Projeção mensal (a vencer): usa CC_VALOR
+// - Fluxo próximo mês: usa CC_VALOR
+// - Filiais/Categorias/Fornecedores: usa SALDO_EM_ABERTO
 // ═══════════════════════════════════════════════
 function metricas() {
   const hj = new Date();
-  
-  let pMes = hj.getMonth() + 1;
-  let pAno = hj.getFullYear();
-  if(pMes > 11) { pMes = 0; pAno++; }
-
+  // próximo mês (0-11)
+  let pMes = hj.getMonth()+1, pAno = hj.getFullYear();
+  if(pMes>11){pMes=0;pAno++;}
   const MES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const MES_EXT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
+  // KPIs principais
   let totSaldo=0, vecSaldo=0, avCC=0, qv=0, qa=0, fluxCC=0;
+  // Aging usa CC_VALOR (valor MKT dos vencidos por faixa)
   const agFx={'1–30 dias':{v:0,q:0},'31–60 dias':{v:0,q:0},'61–90 dias':{v:0,q:0},'90+ dias':{v:0,q:0}};
-  
+  // Projeção mensal usa CC_VALOR
   const aM={};
+  // Filiais/Categorias/Fornecedores usam SALDO_EM_ABERTO
   const aF={},aC={},aFn={};
-  
-  const vencidosPorFornecedorReal = {};
 
-  DADOS.forEach(r => {
+  DADOS.forEach(r=>{
     const s   = r.SALDO_EM_ABERTO;
     const ccv = r.CC_VALOR;
-    const isV = r.STATUS_VENCIMENTO === 'Vencido';
+    const isV = r.STATUS_VENCIMENTO==='Vencido';
 
     totSaldo += s;
 
-    if(isV) {
-      vecSaldo += s; 
+    if(isV){
+      // Vencido: soma saldo em aberto
+      vecSaldo += s;
       qv++;
+      // Aging: soma CC_VALOR para os vencidos
       if(r.AGING && agFx[r.AGING]){
         agFx[r.AGING].v += ccv;
         agFx[r.AGING].q++;
       }
-      
-      if(!vencidosPorFornecedorReal[r.AGENTE]) {
-        vencidosPorFornecedorReal[r.AGENTE] = { totalVencidoReal: 0, maxDias: 0 };
-      }
-      vencidosPorFornecedorReal[r.AGENTE].totalVencidoReal += s;
-      if(r.DIAS_ATRASO > vencidosPorFornecedorReal[r.AGENTE].maxDias) {
-        vencidosPorFornecedorReal[r.AGENTE].maxDias = r.DIAS_ATRASO;
-      }
     } else {
+      // A Vencer: soma CC_VALOR (valor MKT)
       avCC += ccv;
       qa++;
-
-      if(r.VENCIMENTO) {
-        const p = r.VENCIMENTO.split('/');
-        if(p.length===3) {
-          const mi = parseInt(p[1],10)-1;
-          const an = parseInt(p[2],10);
-          const chave = MES_PT[mi]+'/'+String(p[2]).slice(-2);
-          aM[chave] = (aM[chave]||0) + ccv;
-
-          if(mi === pMes && an === pAno) {
-            fluxCC += ccv;
-          }
-        }
+      // Projeção mensal: usa CC_VALOR
+      const p = r.VENCIMENTO.split('/');
+      if(p.length===3){
+        const mi = parseInt(p[1],10)-1; // mês 0-11
+        const an = parseInt(p[2],10);
+        const chave = MES_PT[mi]+'/'+String(p[2]).slice(-2);
+        aM[chave] = (aM[chave]||0) + ccv;
+        // Fluxo próximo mês
+        if(mi===pMes && an===pAno) fluxCC += ccv;
       }
     }
 
+    // Filiais (saldo em aberto)
     if(!aF[r.NOME_FANTASIA]) aF[r.NOME_FANTASIA]={v:0,a:0,t:0};
-    aF[r.NOME_FANTASIA].t += s;
-    if(isV) aF[r.NOME_FANTASIA].v += s; else aF[r.NOME_FANTASIA].a += s;
+    aF[r.NOME_FANTASIA].t+=s;
+    if(isV) aF[r.NOME_FANTASIA].v+=s; else aF[r.NOME_FANTASIA].a+=s;
 
+    // Categorias (saldo em aberto)
     if(!aC[r.CLA_DESCRICAO]) aC[r.CLA_DESCRICAO]={v:0,t:0};
-    aC[r.CLA_DESCRICAO].t += s;
-    if(isV) aC[r.CLA_DESCRICAO].v += s;
+    aC[r.CLA_DESCRICAO].t+=s;
+    if(isV) aC[r.CLA_DESCRICAO].v+=s;
 
+    // Fornecedores (saldo em aberto)
     if(!aFn[r.AGENTE]) aFn[r.AGENTE]={s:0,st:'Em aberto',d:0,p:0,fil:r.NOME_FANTASIA,cat:r.CLA_DESCRICAO};
-    aFn[r.AGENTE].s += s; 
-    aFn[r.AGENTE].p++;
-    if(isV && r.DIAS_ATRASO > aFn[r.AGENTE].d) aFn[r.AGENTE].d = r.DIAS_ATRASO;
-    if(isV) aFn[r.AGENTE].st = 'Vencido';
+    aFn[r.AGENTE].s+=s; aFn[r.AGENTE].p++;
+    if(r.DIAS_ATRASO>aFn[r.AGENTE].d) aFn[r.AGENTE].d=r.DIAS_ATRASO;
+    if(isV) aFn[r.AGENTE].st='Vencido';
   });
 
+  // Ordena projeção mensal cronologicamente
   const mensal = Object.keys(aM).map(k=>{
     const p=k.split('/');
     const mi=MES_PT.indexOf(p[0]);
@@ -445,58 +467,44 @@ function metricas() {
   const filial  = Object.keys(aF).map(k=>({n:k,...aF[k]})).sort((a,b)=>b.t-a.t);
   const cat     = Object.keys(aC).map(k=>({n:k,...aC[k]})).sort((a,b)=>b.t-a.t);
   const forn    = Object.keys(aFn).map(k=>({ag:k,nc:k.length>24?k.slice(0,24)+'…':k,...aFn[k]})).sort((a,b)=>b.s-a.s);
-
-  let maiorFornVencidoObj = null;
-  let maiorValorVencidoEncontrado = 0;
-
-  for(const nomeF in vencidosPorFornecedorReal) {
-    if(vencidosPorFornecedorReal[nomeF].totalVencidoReal > maiorValorVencidoEncontrado) {
-      maiorValorVencidoEncontrado = vencidosPorFornecedorReal[nomeF].totalVencidoReal;
-      maiorFornVencidoObj = {
-        ag: nomeF,
-        nc: nomeF.length > 24 ? nomeF.slice(0,24)+'…' : nomeF,
-        vencidoReal: vencidosPorFornecedorReal[nomeF].totalVencidoReal,
-        dias: vencidosPorFornecedorReal[nomeF].maxDias
-      };
-    }
-  }
+  const vForn   = forn.filter(f=>f.st==='Vencido');
+  const maior   = vForn.length>0?vForn[0]:null;
 
   return {
     kpi:{tot:totSaldo, vec:vecSaldo, av:avCC, qv, qa, total:DADOS.length, flux:fluxCC, proxMes:MES_EXT[pMes]},
     aging:Object.keys(agFx).map(k=>({f:k,...agFx[k]})),
-    mensal, filial, cat, forn, maior: maiorFornVencidoObj
+    mensal, filial, cat, forn, maior
   };
 }
 
 // ═══════════════════════════════════════════════
-// RENDERIZAÇÃO DE ENTRADAS E BLOCOS KPI
+// RENDER KPIs
 // ═══════════════════════════════════════════════
 function renderKPIs(m) {
   const k=m.kpi;
   const pv=k.tot>0?(k.vec/k.tot*100).toFixed(1)+'%':'0%';
   const pa=k.tot>0?(k.av/k.tot*100).toFixed(1)+'%':'0%';
   const defs=[
-    {l:'Saldo Total em Aberto',v:fmtK(k.tot),s:k.total+' parcelas na base',c:'blue'},
-    {l:'Total Vencido',v:fmtK(k.vec),s:k.qv+' parcelas atrasadas · '+pv,c:'red'},
-    {l:'A Vencer (CC MKT)',v:fmtK(k.av),s:k.qa+' parcelas futuras · '+pa,c:'green'},
-    {l:'Fluxo — '+k.proxMes,v:fmtK(k.flux),s:'Vencimentos MKT do mês seguinte',c:'orange'},
-    {l:'Maior Fornecedor Vencido',v:m.maior?fmtK(m.maior.vencidoReal):'R$ 0',s:m.maior?m.maior.nc+' · '+m.maior.dias+'d real':'Nenhum',c:'purple'},
+    {l:'Saldo Total em Aberto',v:fmtK(k.tot),s:k.total+' parcelas',c:'blue'},
+    {l:'Total Vencido',v:fmtK(k.vec),s:k.qv+' parcelas · '+pv,c:'red'},
+    {l:'A Vencer (CC MKT)',v:fmtK(k.av),s:k.qa+' parcelas · '+pa,c:'green'},
+    {l:'Fluxo — '+k.proxMes,v:fmtK(k.flux),s:'Vencimentos do mês seguinte',c:'orange'},
+    {l:'Maior Fornecedor Vencido',v:m.maior?fmtK(m.maior.s):'R$ 0',s:m.maior?m.maior.nc+' · '+m.maior.d+'d':'Nenhum',c:'purple'},
   ];
   document.getElementById('kpiGrid').innerHTML=defs.map(d=>
     `<div class="kpi ${d.c}"><div class="kpi-label">${d.l}</div><div class="kpi-value">${d.v}</div><div class="kpi-sub">${d.s}</div></div>`
   ).join('');
 
-  if(m.maior && m.maior.dias > 0){
+  // Alert strip
+  if(m.maior&&m.maior.d>30){
     document.getElementById('alertStrip').style.display='flex';
     document.getElementById('alertMsg').innerHTML=
-      `<strong style="color:var(--red)">${m.maior.ag}</strong>: possui <strong style="color:var(--red)">${fmt(m.maior.vencidoReal)}</strong> vencidos efetivamente há <strong style="color:var(--red)">${m.maior.dias} dias</strong>. (Valores futuros a vencer foram totalmente desconsiderados deste alerta).`;
-  } else {
-    document.getElementById('alertStrip').style.display='none';
+      `<strong style="color:var(--red)">${m.maior.ag}</strong>: ${fmt(m.maior.s)} vencido há <strong style="color:var(--red)">${m.maior.d} dias</strong>. Regularize com urgência.`;
   }
 }
 
 // ═══════════════════════════════════════════════
-// ENGINE CONFIG GRAFICOS CHART.JS
+// GRÁFICOS
 // ═══════════════════════════════════════════════
 Chart.defaults.color='#8b949e';
 Chart.defaults.font.family='"Segoe UI",system-ui,sans-serif';
@@ -506,15 +514,11 @@ const PAL=['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364'
 const GR='rgba(255,255,255,0.06)';
 
 function renderGraficos(m) {
-  document.querySelectorAll('canvas').forEach(canvas => {
-    const chartExist = Chart.getChart(canvas.id);
-    if(chartExist) chartExist.destroy();
-  });
-
   const base={responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false}},
     scales:{x:{grid:{color:GR},ticks:{callback:fmtK}},y:{grid:{color:GR}}}};
 
+  // Aging — usa CC_VALOR dos vencidos por faixa
   new Chart('cAging',{type:'bar',
     data:{labels:m.aging.map(d=>`${d.f} (${d.q})`),
       datasets:[{data:m.aging.map(d=>d.v),backgroundColor:[C.r,C.o,C.y,'#a32d2d'],borderRadius:5,borderWidth:0}]},
@@ -522,10 +526,11 @@ function renderGraficos(m) {
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}}}
   });
 
+  // Projeção mensal — usa CC_VALOR dos a vencer
   new Chart('cMensal',{type:'bar',
     data:{labels:m.mensal.map(d=>d.mes),
       datasets:[{data:m.mensal.map(d=>d.v),borderRadius:5,borderWidth:0,
-        backgroundColor:m.mensal.map((_,i)=>i===0?C.o:C.b)}]},
+        backgroundColor:m.mensal.map((_,i)=>i===1?C.o:C.b)}]},
     options:{...base,scales:{x:{grid:{display:false},ticks:{maxRotation:45,autoSkip:false}},
       y:{grid:{color:GR},ticks:{callback:fmtK}}},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}}}
@@ -589,9 +594,9 @@ function renderGraficos(m) {
 }
 
 // ═══════════════════════════════════════════════
-// TABELAS SECUNDÁRIAS DE ANÁLISE
+// TABELAS ESTÁTICAS
 // ═══════════════════════════════════════════════
-function dcls(d){return d>90?'color:var(--red);font-weight:700': d>60?'color:var(--orange);font-weight:600': d>30?'color:#e3b341;font-weight:600':'color:var(--muted)'}
+function dcls(d){return d>90?'color:var(--red);font-weight:700':d>60?'color:var(--orange);font-weight:600':d>30?'color:#e3b341;font-weight:600':'color:var(--muted)'}
 
 function renderTabelas(m) {
   document.getElementById('tbForn').innerHTML=m.forn.map(f=>`
@@ -631,7 +636,7 @@ function renderTabelas(m) {
 }
 
 // ═══════════════════════════════════════════════
-// FILTROS AVANÇADOS E PAGINAÇÃO
+// FILTROS E TABELA DE REGISTROS
 // ═══════════════════════════════════════════════
 function popular() {
   const fils=[...new Set(DADOS.map(r=>r.NOME_FANTASIA))].sort();
@@ -646,7 +651,6 @@ function filtrar() {
   const fi=document.getElementById('fFilial').value;
   const ca=document.getElementById('fCat').value;
   const ag=document.getElementById('fAging').value;
-
   filtrados=DADOS.filter(r=>{
     if(b&&!r.AGENTE.toLowerCase().includes(b)&&!r.NOME_FANTASIA.toLowerCase().includes(b)&&!r.CLA_DESCRICAO.toLowerCase().includes(b)) return false;
     if(st&&r.STATUS_VENCIMENTO!==st) return false;
@@ -664,8 +668,9 @@ function filtrar() {
   pagAtual=1; renderReg();
 }
 
-function limpar()){['fBusca','fStatus','fFilial','fCat','fAging'].forEach(id=>{document.getElementById(id).value=''});filtrar();}
+function limpar(){['fBusca','fStatus','fFilial','fCat','fAging'].forEach(id=>{document.getElementById(id).value=''});filtrar();}
 
+let colOrdAtivo=null;
 function ord(col,th){
   if(colOrd===col) dirOrd*=-1; else{colOrd=col;dirOrd=-1;}
   document.querySelectorAll('thead th').forEach(t=>{t.classList.remove('sa','sd')});
@@ -682,19 +687,17 @@ function agingBadge(r){
 
 function renderReg(){
   const sorted=[...filtrados].sort((a,b)=>{
-    const va=a[colOrd]||0, vb=b[colOrd]||0;
-    if(typeof va==='number' && typeof vb==='number'){
-      return (va-vb)*dirOrd;
-    }
-    return String(va).localeCompare(String(vb),'pt-BR')*dirOrd;
+    const va=a[colOrd]||'',vb=b[colOrd]||'';
+    return (typeof va==='number'?(va-vb):String(va).localeCompare(String(vb),'pt-BR'))*dirOrd;
   });
-
   const total=sorted.length;
   const pag=sorted.slice((pagAtual-1)*TAM_PAG, pagAtual*TAM_PAG);
-  
   document.getElementById('tbReg').innerHTML=pag.map(r=>{
     const v=r.STATUS_VENCIMENTO==='Vencido';
-    const diasTxt = v && r.DIAS_ATRASO>0 ? `<span style="${dcls(r.DIAS_ATRASO)}">${r.DIAS_ATRASO} dias</span>` : '—';
+    // Dias em atraso: mostra só se vencido e > 0
+    const diasTxt = v && r.DIAS_ATRASO>0
+      ? `<span style="${dcls(r.DIAS_ATRASO)}">${r.DIAS_ATRASO} dias</span>`
+      : '—';
     return `<tr class="${v?'rv':''}">
       <td><span class="badge ${v?'bv':'ba'}">${v?'VENCIDO':'EM ABERTO'}</span></td>
       <td>${agingBadge(r)}</td>
@@ -702,22 +705,23 @@ function renderReg(){
       <td style="font-size:11px;max-width:190px;white-space:normal">${r.AGENTE}</td>
       <td>${r.VENCIMENTO}</td>
       <td style="text-align:right">${fmt(r.VALOR)}</td>
-      <td style="text-align:right;color:var(--accent);font-weight:600">${fmt(r.CC_VALOR)}</td>
+      <td style="text-align:right;color:var(--accent)">${fmt(r.CC_VALOR)}</td>
       <td style="text-align:right;font-weight:600;color:var(${v?'--red':'--accent'})">${fmt(r.SALDO_EM_ABERTO)}</td>
       <td style="text-align:center">${diasTxt}</td>
       <td style="font-size:11px">${r.CLA_DESCRICAO}</td>
     </tr>`;
   }).join('');
-
-  document.getElementById('fCount').textContent=total+' registros localizados';
+  document.getElementById('fCount').textContent=total+' registros';
   document.getElementById('pInfo').textContent=`Pág. ${pagAtual} de ${Math.ceil(total/TAM_PAG)||1}`;
   document.getElementById('bPrev').disabled=pagAtual===1;
   document.getElementById('bNext').disabled=pagAtual>=Math.ceil(total/TAM_PAG);
 }
 
-// Navegação entre abas
 function pag(d){pagAtual+=d;renderReg();}
 
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
 function pg(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
