@@ -109,14 +109,7 @@ td{padding:8px 11px;white-space:nowrap}
 
 <div class="header">
   <div class="header-brand">
-    <svg class="header-logo" viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg" style="height:38px;width:auto;display:block;fill:#ffffff">
-      <rect x="0" y="0" width="22" height="95" rx="3" />
-      <rect x="38" y="0" width="22" height="95" rx="3" />
-      <polygon points="60,0 82,0 60,95" />
-      <rect x="60" y="0" width="22" height="95" rx="3" />
-      <path d="M120,0 Q185,0 185,47 L163,47 Q163,22 120,22 Q95,22 95,47 L95,48 Q95,73 120,73 Q163,73 163,48 L185,48 Q185,95 120,95 Q70,95 70,47 Q70,0 120,0 Z" />
-      <text x="0" y="130" font-family="'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" letter-spacing="9" font-weight="300" fill="#ffffff">EMPREENDIMENTOS</text>
-    </svg>
+    <img class="header-logo" src="logo fundo transparente.png" alt="INC Empreendimentos">
     <div class="header-left">
       <h1>Dashboard · Contas a Pagar · MKT</h1>
       <p>INC Empreendimentos — JF · Uberlândia · Uberaba · São João del-Rei · SJRP · SJC</p>
@@ -133,7 +126,6 @@ td{padding:8px 11px;white-space:nowrap}
   <button class="nav-btn" onclick="pg('p-reg',this)">🔍 Todos os Registros</button>
 </nav>
 
-<!-- VISÃO GERAL -->
 <div id="p-geral" class="page active">
   <div class="alert-strip" id="alertStrip" style="display:none"><span style="font-size:16px">🚨</span><div id="alertMsg"></div></div>
   <div class="kpi-grid" id="kpiGrid"></div>
@@ -147,7 +139,6 @@ td{padding:8px 11px;white-space:nowrap}
   </div>
 </div>
 
-<!-- FORNECEDORES -->
 <div id="p-forn" class="page">
   <div class="card" style="margin-bottom:14px"><div class="card-title"><span class="ic">👥</span>Top 20 Fornecedores — Saldo em Aberto</div><div style="position:relative;height:440px"><canvas id="cForn"></canvas></div></div>
   <div class="card">
@@ -159,7 +150,6 @@ td{padding:8px 11px;white-space:nowrap}
   </div>
 </div>
 
-<!-- FILIAIS -->
 <div id="p-fil" class="page">
   <div class="card" style="margin-bottom:14px"><div class="card-title"><span class="ic">🏢</span>Vencido vs A Vencer por Filial</div><div style="position:relative;height:360px"><canvas id="cFilStack"></canvas></div></div>
   <div class="card">
@@ -171,7 +161,6 @@ td{padding:8px 11px;white-space:nowrap}
   </div>
 </div>
 
-<!-- CATEGORIAS -->
 <div id="p-cat" class="page">
   <div class="charts-row">
     <div class="card"><div class="card-title"><span class="ic">🥧</span>Distribuição por Categoria</div><div style="position:relative;height:310px"><canvas id="cPie"></canvas></div></div>
@@ -186,7 +175,6 @@ td{padding:8px 11px;white-space:nowrap}
   </div>
 </div>
 
-<!-- REGISTROS -->
 <div id="p-reg" class="page">
   <div class="filters">
     <input type="text" id="fBusca" placeholder="🔍  Buscar fornecedor, filial, categoria..." oninput="filtrar()">
