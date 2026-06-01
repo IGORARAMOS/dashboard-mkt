@@ -64,6 +64,7 @@ body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(
 .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:15px 16px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s}
 .kpi:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
 .kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:3px}
 .kpi.red::before{background:var(--red)}.kpi.green::before{background:var(--green)}
 .kpi.blue::before{background:var(--accent)}.kpi.orange::before{background:var(--orange)}
@@ -247,17 +248,18 @@ td{padding:8px 11px;white-space:nowrap}
 
 <script>
 // ═══════════════════════════════════════════════
-// SISTEMA DE SEGURANÇA (SENHA CRIPTOGRAFADA)
+// SISTEMA DE SEGURANÇA CORRIGIDO (SHA-256)
 // ═══════════════════════════════════════════════
-// Esta sequência longa é o hash SHA-256 da senha 'mkt#inc2026'
+// Hash SHA-256 exato da palavra-passe 'mkt#inc2026'
 const VERIFICADOR_HASH = "98fa4c3ba45952d7ee85d99723ddcc590d6cfcf5ef740ee30be908fc99ef652a";
 
 function verificarAcesso() {
-  const inputSenha = document.getElementById("lock-input").value;
+  // O .trim() remove qualquer espaço invisível acidental vindo do teclado ou do copiar-colar
+  const inputSenha = document.getElementById("lock-input").value.trim();
   const erroElemento = document.getElementById("lock-error");
   
-  // Transforma o texto inserido no input em SHA-256
-  const hashDigitado = CryptoJS.SHA256(inputSenha).toString();
+  // Transforma o input em SHA-256 e força a string resultante a ficar em letras minúsculas (.toLowerCase())
+  const hashDigitado = CryptoJS.SHA256(inputSenha).toString().toLowerCase();
   
   if (hashDigitado === VERIFICADOR_HASH) {
     document.getElementById("lock-screen").style.display = "none";
@@ -277,7 +279,7 @@ function checarEnter(event) {
 }
 
 // ═══════════════════════════════════════════════
-// CONFIGURAÇÃO DOS DADOS
+// CONFIGURAÇÃO DOS DADOS DO DASHBOARD
 // ═══════════════════════════════════════════════
 const API = 'https://script.google.com/macros/s/AKfycbw3PRhwQRz5TtHqmlz_UWUwWAam4onXPD_ZlI66zV0vkO6XlogjA1N0ELDnw-qRGt1R/exec';
 
@@ -336,14 +338,14 @@ function aging(dias) {
 }
 
 // ═══════════════════════════════════════════════
-// CARGA DOS DADOS (CHAMADO APÓS SUCESSO DO LOGIN)
+// CARGA DOS DADOS
 // ═══════════════════════════════════════════════
 async function init() {
   show('ls'); hide('es');
   try {
     const r = await fetch(API+'?t='+Date.now());
     if(!r.ok) throw new Error('HTTP '+r.status);
-    const raw = await r.status ? await r.json() : [];
+    const raw = await r.json();
     const lista = Array.isArray(raw) ? raw : (raw.registros||raw.data||[]);
     if(!lista.length) throw new Error('API retornou 0 registros');
 
@@ -654,8 +656,6 @@ function pg(id,btn){
 }
 function show(id){document.getElementById(id).style.display='flex';}
 function hide(id){document.getElementById(id).style.display='none';}
-
-// Removida a carga direta automática da janela para esperar pela validação da senha.
 </script>
 </body>
 </html>
