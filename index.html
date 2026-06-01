@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard MKT — INC Empreendimentos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -28,6 +29,25 @@
   }
 }
 body{font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* Estilo da Tela de Bloqueio Autenticada */
+#lock-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: var(--hgrad); color: #fff; z-index: 10000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.login-box { background: var(--surface); border: 1px solid var(--border); padding: 32px; border-radius: 12px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.3); width: 100%; max-width: 360px; }
+.login-box h3 { font-size: 16px; margin-bottom: 6px; color: var(--text); font-weight: 600; }
+.login-box p { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+.login-box input { padding: 10px 14px; width: 100%; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 6px; text-align: center; font-size: 14px; outline: none; margin-bottom: 12px; }
+.login-box input:focus { border-color: var(--accent); }
+.login-box button { padding: 10px; width: 100%; border: none; background: var(--accent); color: white; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; transition: background 0.2s; }
+.login-box button:hover { opacity: 0.9; }
+#lock-error { color: var(--red); font-size: 12px; margin-top: 10px; display: none; font-weight: 500; }
+
+/* Dashboard oculto por padrão */
+#dashboard-app { display: none; }
+
 .header{background:var(--hgrad);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
 .header-brand{display:flex;align-items:center;gap:14px}
 .header-logo{height:38px;width:auto;object-fit:contain;filter:var(--logo-filter)}
@@ -100,122 +120,164 @@ td{padding:8px 11px;white-space:nowrap}
 </head>
 <body>
 
-<div id="ls"><div class="sp"></div><p>Carregando dados...</p></div>
-<div id="es">
-  <p style="color:var(--red);font-size:15px;font-weight:600">⚠ Falha ao carregar dados</p>
-  <p id="emsg" style="color:var(--muted);font-size:12px"></p>
-  <button onclick="init()" style="background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;margin-top:8px;font-size:13px">↺ Tentar novamente</button>
+<div id="lock-screen">
+  <div class="login-box">
+    <h3>Acesso Restrito · INC MKT</h3>
+    <p>Insira a credencial de segurança para abrir o painel.</p>
+    <input type="password" id="lock-input" placeholder="••••••••••••" onkeypress="checarEnter(event)">
+    <button onclick="verificarAcesso()">Visualizar Dashboard</button>
+    <div id="lock-error">Senha incorreta. Tente novamente.</div>
+  </div>
 </div>
 
-<div class="header">
-  <div class="header-brand">
-    <img class="header-logo" src="logo fundo transparente.png" alt="INC Empreendimentos">
-    <div class="header-left">
-      <h1>Dashboard · Contas a Pagar · MKT</h1>
-      <p>INC Empreendimentos — JF · Uberlândia · Uberaba · São João del-Rei · SJRP · SJC</p>
+<div id="dashboard-app">
+  <div id="ls"><div class="sp"></div><p>Carregando dados...</p></div>
+  <div id="es">
+    <p style="color:var(--red);font-size:15px;font-weight:600">⚠ Falha ao carregar dados</p>
+    <p id="emsg" style="color:var(--muted);font-size:12px"></p>
+    <button onclick="init()" style="background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:6px;cursor:pointer;margin-top:8px;font-size:13px">↺ Tentar novamente</button>
+  </div>
+
+  <div class="header">
+    <div class="header-brand">
+      <img class="header-logo" src="logo fundo transparente.png" alt="INC Empreendimentos">
+      <div class="header-left">
+        <h1>Dashboard · Contas a Pagar · MKT</h1>
+        <p>INC Empreendimentos — JF · Uberlândia · Uberaba · São João del-Rei · SJRP · SJC</p>
+      </div>
+    </div>
+    <span class="badge-ref" id="badgeRef">Carregando...</span>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn active" onclick="pg('p-geral',this)">📈 Visão Geral</button>
+    <button class="nav-btn" onclick="pg('p-forn',this)">👥 Fornecedores</button>
+    <button class="nav-btn" onclick="pg('p-fil',this)">🏢 Filiais</button>
+    <button class="nav-btn" onclick="pg('p-cat',this)">📂 Categorias</button>
+    <button class="nav-btn" onclick="pg('p-reg',this)">🔍 Todos os Registros</button>
+  </nav>
+
+  <div id="p-geral" class="page active">
+    <div class="alert-strip" id="alertStrip" style="display:none"><span style="font-size:16px">🚨</span><div id="alertMsg"></div></div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="charts-row">
+      <div class="card"><div class="card-title"><span class="ic">⚠</span>Aging — Vencidos por Faixa (CC MKT)</div><div style="position:relative;height:210px"><canvas id="cAging"></canvas></div></div>
+      <div class="card"><div class="card-title"><span class="ic">📅</span>A Vencer · Projeção Mensal (CC MKT)</div><div style="position:relative;height:210px"><canvas id="cMensal"></canvas></div></div>
+    </div>
+    <div class="charts-row">
+      <div class="card"><div class="card-title"><span class="ic">🏢</span>Top 8 Filiais</div><div style="position:relative;height:250px"><canvas id="cFilial"></canvas></div></div>
+      <div class="card"><div class="card-title"><span class="ic">📂</span>Saldo por Categoria</div><div style="position:relative;height:250px"><canvas id="cCat"></canvas></div></div>
     </div>
   </div>
-  <span class="badge-ref" id="badgeRef">Carregando...</span>
-</div>
 
-<nav class="nav">
-  <button class="nav-btn active" onclick="pg('p-geral',this)">📈 Visão Geral</button>
-  <button class="nav-btn" onclick="pg('p-forn',this)">👥 Fornecedores</button>
-  <button class="nav-btn" onclick="pg('p-fil',this)">🏢 Filiais</button>
-  <button class="nav-btn" onclick="pg('p-cat',this)">📂 Categorias</button>
-  <button class="nav-btn" onclick="pg('p-reg',this)">🔍 Todos os Registros</button>
-</nav>
-
-<div id="p-geral" class="page active">
-  <div class="alert-strip" id="alertStrip" style="display:none"><span style="font-size:16px">🚨</span><div id="alertMsg"></div></div>
-  <div class="kpi-grid" id="kpiGrid"></div>
-  <div class="charts-row">
-    <div class="card"><div class="card-title"><span class="ic">⚠</span>Aging — Vencidos por Faixa (CC MKT)</div><div style="position:relative;height:210px"><canvas id="cAging"></canvas></div></div>
-    <div class="card"><div class="card-title"><span class="ic">📅</span>A Vencer — Projeção Mensal (CC MKT)</div><div style="position:relative;height:210px"><canvas id="cMensal"></canvas></div></div>
+  <div id="p-forn" class="page">
+    <div class="card" style="margin-bottom:14px"><div class="card-title"><span class="ic">👥</span>Top 20 Fornecedores — Saldo em Aberto</div><div style="position:relative;height:440px"><canvas id="cForn"></canvas></div></div>
+    <div class="card">
+      <div class="card-title"><span class="ic">📋</span>Detalhe por Fornecedor</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Fornecedor</th><th>Status</th><th>Filial Principal</th><th>Categoria</th><th>Parcelas</th><th>Dias em Atraso</th><th>Saldo em Aberto</th></tr></thead>
+        <tbody id="tbForn"></tbody>
+      </table></div>
+    </div>
   </div>
-  <div class="charts-row">
-    <div class="card"><div class="card-title"><span class="ic">🏢</span>Top 8 Filiais</div><div style="position:relative;height:250px"><canvas id="cFilial"></canvas></div></div>
-    <div class="card"><div class="card-title"><span class="ic">📂</span>Saldo por Categoria</div><div style="position:relative;height:250px"><canvas id="cCat"></canvas></div></div>
-  </div>
-</div>
 
-<div id="p-forn" class="page">
-  <div class="card" style="margin-bottom:14px"><div class="card-title"><span class="ic">👥</span>Top 20 Fornecedores — Saldo em Aberto</div><div style="position:relative;height:440px"><canvas id="cForn"></canvas></div></div>
-  <div class="card">
-    <div class="card-title"><span class="ic">📋</span>Detalhe por Fornecedor</div>
+  <div id="p-fil" class="page">
+    <div class="card" style="margin-bottom:14px"><div class="card-title"><span class="ic">🏢</span>Vencido vs A Vencer por Filial</div><div style="position:relative;height:360px"><canvas id="cFilStack"></canvas></div></div>
+    <div class="card">
+      <div class="card-title"><span class="ic">📊</span>Resumo por Filial</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Filial / Empreendimento</th><th>Vencido (R$)</th><th>A Vencer (R$)</th><th>Total (R$)</th><th>% Vencido</th></tr></thead>
+        <tbody id="tbFil"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div id="p-cat" class="page">
+    <div class="charts-row">
+      <div class="card"><div class="card-title"><span class="ic">🥧</span>Distribuição por Categoria</div><div style="position:relative;height:310px"><canvas id="cPie"></canvas></div></div>
+      <div class="card"><div class="card-title"><span class="ic">📊</span>Vencido vs A Vencer</div><div style="position:relative;height:310px"><canvas id="cCatStack"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ic">📋</span>Detalhe por Categoria</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Categoria (CLA)</th><th>Vencido (R$)</th><th>A Vencer (R$)</th><th>Total (R$)</th><th>% Total</th><th>Participação</th></tr></thead>
+        <tbody id="tbCat"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div id="p-reg" class="page">
+    <div class="filters">
+      <input type="text" id="fBusca" placeholder="🔍  Buscar fornecedor, filial, categoria..." oninput="filtrar()">
+      <select id="fStatus" onchange="filtrar()"><option value="">Todos os status</option><option value="Vencido">🔴 Vencido</option><option value="Em aberto">🟢 Em aberto</option></select>
+      <select id="fFilial" onchange="filtrar()"><option value="">Todas as filiais</option></select>
+      <select id="fCat" onchange="filtrar()"><option value="">Todas as categorias</option></select>
+      <select id="fAging" onchange="filtrar()">
+        <option value="">Todos os agings</option>
+        <option value="1-30">1–30 dias</option>
+        <option value="31-60">31–60 dias</option>
+        <option value="61-90">61–90 dias</option>
+        <option value="90+">90+ dias</option>
+      </select>
+      <button class="btn-clear" onclick="limpar()">✕ Limpar</button>
+      <span class="filter-count" id="fCount"></span>
+    </div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Fornecedor</th><th>Status</th><th>Filial Principal</th><th>Categoria</th><th>Parcelas</th><th>Dias em Atraso</th><th>Saldo em Aberto</th></tr></thead>
-      <tbody id="tbForn"></tbody>
+      <thead><tr>
+        <th onclick="ord('STATUS_VENCIMENTO',this)">Status</th>
+        <th>Aging</th>
+        <th onclick="ord('NOME_FANTASIA',this)">Filial</th>
+        <th onclick="ord('AGENTE',this)">Fornecedor</th>
+        <th onclick="ord('VCT_TS',this)">Vencimento</th>
+        <th onclick="ord('VALOR',this)">Valor Total (R$)</th>
+        <th onclick="ord('CC_VALOR',this)">CC MKT (R$)</th>
+        <th onclick="ord('SALDO_EM_ABERTO',this)">Saldo (R$)</th>
+        <th onclick="ord('DIAS_ATRASO',this)">Dias Atraso</th>
+        <th onclick="ord('CLA_DESCRICAO',this)">Categoria</th>
+      </tr></thead>
+      <tbody id="tbReg"></tbody>
     </table></div>
-  </div>
-</div>
-
-<div id="p-fil" class="page">
-  <div class="card" style="margin-bottom:14px"><div class="card-title"><span class="ic">🏢</span>Vencido vs A Vencer por Filial</div><div style="position:relative;height:360px"><canvas id="cFilStack"></canvas></div></div>
-  <div class="card">
-    <div class="card-title"><span class="ic">📊</span>Resumo por Filial</div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Filial / Empreendimento</th><th>Vencido (R$)</th><th>A Vencer (R$)</th><th>Total (R$)</th><th>% Vencido</th></tr></thead>
-      <tbody id="tbFil"></tbody>
-    </table></div>
-  </div>
-</div>
-
-<div id="p-cat" class="page">
-  <div class="charts-row">
-    <div class="card"><div class="card-title"><span class="ic">🥧</span>Distribuição por Categoria</div><div style="position:relative;height:310px"><canvas id="cPie"></canvas></div></div>
-    <div class="card"><div class="card-title"><span class="ic">📊</span>Vencido vs A Vencer</div><div style="position:relative;height:310px"><canvas id="cCatStack"></canvas></div></div>
-  </div>
-  <div class="card">
-    <div class="card-title"><span class="ic">📋</span>Detalhe por Categoria</div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Categoria (CLA)</th><th>Vencido (R$)</th><th>A Vencer (R$)</th><th>Total (R$)</th><th>% Total</th><th>Participação</th></tr></thead>
-      <tbody id="tbCat"></tbody>
-    </table></div>
-  </div>
-</div>
-
-<div id="p-reg" class="page">
-  <div class="filters">
-    <input type="text" id="fBusca" placeholder="🔍  Buscar fornecedor, filial, categoria..." oninput="filtrar()">
-    <select id="fStatus" onchange="filtrar()"><option value="">Todos os status</option><option value="Vencido">🔴 Vencido</option><option value="Em aberto">🟢 Em aberto</option></select>
-    <select id="fFilial" onchange="filtrar()"><option value="">Todas as filiais</option></select>
-    <select id="fCat" onchange="filtrar()"><option value="">Todas as categorias</option></select>
-    <select id="fAging" onchange="filtrar()">
-      <option value="">Todos os agings</option>
-      <option value="1-30">1–30 dias</option>
-      <option value="31-60">31–60 dias</option>
-      <option value="61-90">61–90 dias</option>
-      <option value="90+">90+ dias</option>
-    </select>
-    <button class="btn-clear" onclick="limpar()">✕ Limpar</button>
-    <span class="filter-count" id="fCount"></span>
-  </div>
-  <div class="table-wrap"><table>
-    <thead><tr>
-      <th onclick="ord('STATUS_VENCIMENTO',this)">Status</th>
-      <th>Aging</th>
-      <th onclick="ord('NOME_FANTASIA',this)">Filial</th>
-      <th onclick="ord('AGENTE',this)">Fornecedor</th>
-      <th onclick="ord('VCT_TS',this)">Vencimento</th>
-      <th onclick="ord('VALOR',this)">Valor Total (R$)</th>
-      <th onclick="ord('CC_VALOR',this)">CC MKT (R$)</th>
-      <th onclick="ord('SALDO_EM_ABERTO',this)">Saldo (R$)</th>
-      <th onclick="ord('DIAS_ATRASO',this)">Dias Atraso</th>
-      <th onclick="ord('CLA_DESCRICAO',this)">Categoria</th>
-    </tr></thead>
-    <tbody id="tbReg"></tbody>
-  </table></div>
-  <div class="pagination">
-    <button onclick="pag(-1)" id="bPrev">‹ Anterior</button>
-    <span id="pInfo"></span>
-    <button onclick="pag(1)" id="bNext">Próxima ›</button>
+    <div class="pagination">
+      <button onclick="pag(-1)" id="bPrev">‹ Anterior</button>
+      <span id="pInfo"></span>
+      <button onclick="pag(1)" id="bNext">Próxima ›</button>
+    </div>
   </div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════
-// CONFIGURAÇÃO
+// SISTEMA DE SEGURANÇA (SENHA CRIPTOGRAFADA)
+// ═══════════════════════════════════════════════
+// Esta sequência longa é o hash SHA-256 da senha 'mkt#inc2026'
+const VERIFICADOR_HASH = "98fa4c3ba45952d7ee85d99723ddcc590d6cfcf5ef740ee30be908fc99ef652a";
+
+function verificarAcesso() {
+  const inputSenha = document.getElementById("lock-input").value;
+  const erroElemento = document.getElementById("lock-error");
+  
+  // Transforma o texto inserido no input em SHA-256
+  const hashDigitado = CryptoJS.SHA256(inputSenha).toString();
+  
+  if (hashDigitado === VERIFICADOR_HASH) {
+    document.getElementById("lock-screen").style.display = "none";
+    document.getElementById("dashboard-app").style.display = "block";
+    // Dispara a carga de dados do Sheets após a liberação da tela
+    init(); 
+  } else {
+    erroElemento.style.display = "block";
+    document.getElementById("lock-input").value = "";
+  }
+}
+
+function checarEnter(event) {
+  if (event.key === "Enter") {
+    verificarAcesso();
+  }
+}
+
+// ═══════════════════════════════════════════════
+// CONFIGURAÇÃO DOS DADOS
 // ═══════════════════════════════════════════════
 const API = 'https://script.google.com/macros/s/AKfycbw3PRhwQRz5TtHqmlz_UWUwWAam4onXPD_ZlI66zV0vkO6XlogjA1N0ELDnw-qRGt1R/exec';
 
@@ -230,9 +292,6 @@ const TAM_PAG = 30;
 const fmt  = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtK = v => { v=Number(v||0); if(v>=1e6) return 'R$ '+(v/1e6).toFixed(1).replace('.',',')+'M'; if(v>=1000) return 'R$ '+(v/1000).toFixed(0)+'K'; return fmt(v); };
 
-// ═══════════════════════════════════════════════
-// PARSER DE MOEDA ROBUSTO
-// ═══════════════════════════════════════════════
 function parseMoeda(v) {
   if(v===null||v===undefined||v==='') return 0;
   if(typeof v==='number') return isFinite(v)?v:0;
@@ -243,9 +302,6 @@ function parseMoeda(v) {
   return isFinite(n)?n:0;
 }
 
-// ═══════════════════════════════════════════════
-// PARSER DE DATA BR
-// ═══════════════════════════════════════════════
 function parseData(s) {
   if(!s||typeof s!=='string') return null;
   const p = s.trim().split('/');
@@ -255,9 +311,6 @@ function parseData(s) {
   return new Date(a, m-1, d);
 }
 
-// ═══════════════════════════════════════════════
-// DIAS DE ATRASO DINÂMICO
-// ═══════════════════════════════════════════════
 function diasAtraso(dataVct, status) {
   if(!dataVct) return 0;
   if(status !== 'Vencido') return 0;
@@ -267,20 +320,13 @@ function diasAtraso(dataVct, status) {
   return diff > 0 ? Math.floor(diff/86400000) : 0;
 }
 
-// ═══════════════════════════════════════════════
-// NORMALIZA STATUS
-// ═══════════════════════════════════════════════
 function normStatus(raw) {
   if(!raw) return 'Em aberto';
-  const s = String(raw).trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const s = String(raw).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   if(s==='vencido'||s==='atrasado'||s.startsWith('venc')) return 'Vencido';
   return 'Em aberto';
 }
 
-// ═══════════════════════════════════════════════
-// AGING LABEL
-// ═══════════════════════════════════════════════
 function aging(dias) {
   if(dias<=0) return '';
   if(dias<=30) return '1–30 dias';
@@ -290,14 +336,14 @@ function aging(dias) {
 }
 
 // ═══════════════════════════════════════════════
-// CARGA DOS DADOS
+// CARGA DOS DADOS (CHAMADO APÓS SUCESSO DO LOGIN)
 // ═══════════════════════════════════════════════
 async function init() {
   show('ls'); hide('es');
   try {
     const r = await fetch(API+'?t='+Date.now());
     if(!r.ok) throw new Error('HTTP '+r.status);
-    const raw = await r.json();
+    const raw = await r.status ? await r.json() : [];
     const lista = Array.isArray(raw) ? raw : (raw.registros||raw.data||[]);
     if(!lista.length) throw new Error('API retornou 0 registros');
 
@@ -354,9 +400,6 @@ async function init() {
   }
 }
 
-// ═══════════════════════════════════════════════
-// MÉTRICAS CORRIGIDAS (ISOLANDO APENAS VENCIDOS)
-// ═══════════════════════════════════════════════
 function metricas() {
   const hj = new Date();
   let pMes = hj.getMonth()+1, pAno = hj.getFullYear();
@@ -377,16 +420,7 @@ function metricas() {
     totSaldo += s;
 
     if(!aFn[r.AGENTE]) {
-      aFn[r.AGENTE] = {
-        vencido: 0, 
-        aVencer: 0, 
-        totalGeral: 0, 
-        st: 'Em aberto', 
-        d: 0, 
-        p: 0, 
-        fil: r.NOME_FANTASIA, 
-        cat: r.CLA_DESCRICAO
-      };
+      aFn[r.AGENTE] = { vencido: 0, aVencer: 0, totalGeral: 0, st: 'Em aberto', d: 0, p: 0, fil: r.NOME_FANTASIA, cat: r.CLA_DESCRICAO };
     }
     
     aFn[r.AGENTE].totalGeral += s;
@@ -395,13 +429,9 @@ function metricas() {
     if(isV){
       vecSaldo += s;
       qv++;
-      
       aFn[r.AGENTE].vencido += s;
       aFn[r.AGENTE].st = 'Vencido';
-      
-      if(r.DIAS_ATRASO > aFn[r.AGENTE].d) {
-        aFn[r.AGENTE].d = r.DIAS_ATRASO;
-      }
+      if(r.DIAS_ATRASO > aFn[r.AGENTE].d) aFn[r.AGENTE].d = r.DIAS_ATRASO;
 
       if(r.AGING && agFx[r.AGING]){
         agFx[r.AGING].v += ccv;
@@ -410,7 +440,6 @@ function metricas() {
     } else {
       avCC += ccv;
       qa++;
-      
       aFn[r.AGENTE].aVencer += s;
 
       const p = r.VENCIMENTO.split('/');
@@ -423,20 +452,17 @@ function metricas() {
       }
     }
 
-    // Filiais
     if(!aF[r.NOME_FANTASIA]) aF[r.NOME_FANTASIA]={v:0,a:0,t:0};
     aF[r.NOME_FANTASIA].t+=s;
     if(isV) aF[r.NOME_FANTASIA].v+=s; else aF[r.NOME_FANTASIA].a+=s;
 
-    // Categorias
     if(!aC[r.CLA_DESCRICAO]) aC[r.CLA_DESCRICAO]={v:0,t:0};
     aC[r.CLA_DESCRICAO].t+=s;
     if(isV) aC[r.CLA_DESCRICAO].v+=s;
   });
 
   const mensal = Object.keys(aM).map(k=>{
-    const p=k.split('/');
-    const mi=MES_PT.indexOf(p[0]);
+    const p=k.split('/'); const mi=MES_PT.indexOf(p[0]);
     return {mes:k,v:aM[k],ts:new Date(2000+parseInt(p[1],10),mi,1).getTime()};
   }).sort((a,b)=>a.ts-b.ts);
 
@@ -444,30 +470,16 @@ function metricas() {
   const cat     = Object.keys(aC).map(k=>({n:k,...aC[k]})).sort((a,b)=>b.t-a.t);
   
   const forn = Object.keys(aFn).map(k=>({
-    ag: k,
-    nc: k.length>24?k.slice(0,24)+'…':k,
-    s: aFn[k].totalGeral,
-    vencido: aFn[k].vencido,
-    st: aFn[k].st,
-    p: aFn[k].p,
-    d: aFn[k].d,
-    fil: aFn[k].fil,
-    cat: aFn[k].cat
+    ag: k, nc: k.length>24?k.slice(0,24)+'…':k, s: aFn[k].totalGeral, vencido: aFn[k].vencido,
+    st: aFn[k].st, p: aFn[k].p, d: aFn[k].d, fil: aFn[k].fil, cat: aFn[k].cat
   })).sort((a,b)=>b.s-a.s);
 
   const vForn = forn.filter(f=>f.st==='Vencido').sort((a,b)=>b.vencido-a.vencido);
   const maior = vForn.length>0 ? vForn[0] : null;
 
-  return {
-    kpi:{tot:totSaldo, vec:vecSaldo, av:avCC, qv, qa, total:DADOS.length, flux:fluxCC, proxMes:MES_EXT[pMes]},
-    aging:Object.keys(agFx).map(k=>({f:k,...agFx[k]})),
-    mensal, filial, cat, forn, maior
-  };
+  return { kpi:{tot:totSaldo, vec:vecSaldo, av:avCC, qv, qa, total:DADOS.length, flux:fluxCC, proxMes:MES_EXT[pMes]}, aging:Object.keys(agFx).map(k=>({f:k,...agFx[k]})), mensal, filial, cat, forn, maior };
 }
 
-// ═══════════════════════════════════════════════
-// RENDER KPIs
-// ═══════════════════════════════════════════════
 function renderKPIs(m) {
   const k=m.kpi;
   const pv=k.tot>0?(k.vec/k.tot*100).toFixed(1)+'%':'0%';
@@ -493,9 +505,6 @@ function renderKPIs(m) {
   }
 }
 
-// ═══════════════════════════════════════════════
-// GRÁFICOS
-// ═══════════════════════════════════════════════
 Chart.defaults.color='#8b949e';
 Chart.defaults.font.family='"Segoe UI",system-ui,sans-serif';
 Chart.defaults.font.size=11;
@@ -504,86 +513,24 @@ const PAL=['#58a6ff','#3fb950','#bc8cff','#d29922','#f85149','#79c0ff','#56d364'
 const GR='rgba(255,255,255,0.06)';
 
 function renderGraficos(m) {
-  const base={responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{x:{grid:{color:GR},ticks:{callback:fmtK}},y:{grid:{color:GR}}}};
+  const base={responsive:true,maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{color:GR},ticks:{callback:fmtK}},y:{grid:{color:GR}}}};
 
-  new Chart('cAging',{type:'bar',
-    data:{labels:m.aging.map(d=>`${d.f} (${d.q})`),
-      datasets:[{data:m.aging.map(d=>d.v),backgroundColor:[C.r,C.o,C.y,'#a32d2d'],borderRadius:5,borderWidth:0}]},
-    options:{...base,scales:{x:{grid:{color:GR}},y:{grid:{color:GR},ticks:{callback:fmtK}}},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}}}
-  });
-
-  new Chart('cMensal',{type:'bar',
-    data:{labels:m.mensal.map(d=>d.mes),
-      datasets:[{data:m.mensal.map(d=>d.v),borderRadius:5,borderWidth:0,
-        backgroundColor:m.mensal.map((_,i)=>i===1?C.o:C.b)}]},
-    options:{...base,scales:{x:{grid:{display:false},ticks:{maxRotation:45,autoSkip:false}},
-      y:{grid:{color:GR},ticks:{callback:fmtK}}},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}}}
-  });
+  new Chart('cAging',{type:'bar', data:{labels:m.aging.map(d=>`${d.f} (${d.q})`), datasets:[{data:m.aging.map(d=>d.v),backgroundColor:[C.r,C.o,C.y,'#a32d2d'],borderRadius:5,borderWidth:0}]}, options:{...base,scales:{x:{grid:{color:GR}},y:{grid:{color:GR},ticks:{callback:fmtK}}}, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}}} });
+  new Chart('cMensal',{type:'bar', data:{labels:m.mensal.map(d=>d.mes), datasets:[{data:m.mensal.map(d=>d.v),borderRadius:5,borderWidth:0, backgroundColor:m.mensal.map((_,i)=>i===1?C.o:C.b)}]}, options:{...base,scales:{x:{grid:{display:false},ticks:{maxRotation:45,autoSkip:false}}, y:{grid:{color:GR},ticks:{callback:fmtK}}}, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}}} });
 
   const f8=m.filial.slice(0,8);
-  new Chart('cFilial',{type:'bar',
-    data:{labels:f8.map(d=>d.n.length>20?d.n.slice(0,20)+'…':d.n),
-      datasets:[{label:'Vencido',data:f8.map(d=>d.v),backgroundColor:C.r,borderWidth:0},
-                {label:'A Vencer',data:f8.map(d=>d.a),backgroundColor:C.b,borderRadius:3,borderWidth:0}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'top',labels:{color:'#8b949e',boxWidth:10,padding:10}},
-        tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}},
-      scales:{x:{grid:{color:GR},ticks:{callback:fmtK}},y:{grid:{display:false}}}}
-  });
+  new Chart('cFilial',{type:'bar', data:{labels:f8.map(d=>d.n.length>20?d.n.slice(0,20)+'…':d.n), datasets:[{label:'Vencido',data:f8.map(d=>d.v),backgroundColor:C.r,borderWidth:0}, {label:'A Vencer',data:f8.map(d=>d.a),backgroundColor:C.b,borderRadius:3,borderWidth:0}]}, options:{indexAxis:'y',responsive:true,maintainAspectRatio:false, plugins:{legend:{display:true,position:'top',labels:{color:'#8b949e',boxWidth:10,padding:10}}, tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}, scales:{x:{grid:{color:GR},ticks:{callback:fmtK}},y:{grid:{display:false}}}} });
 
   const c8=m.cat.slice(0,8);
-  new Chart('cCat',{type:'bar',
-    data:{labels:c8.map(d=>d.n.length>18?d.n.slice(0,18)+'…':d.n),
-      datasets:[{data:c8.map(d=>d.t),backgroundColor:PAL,borderRadius:4,borderWidth:0}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
-      scales:{x:{grid:{color:GR},ticks:{callback:fmtK}},y:{grid:{display:false}}}}
-  });
+  new Chart('cCat',{type:'bar', data:{labels:c8.map(d=>d.n.length>18?d.n.slice(0,18)+'…':d.n), datasets:[{data:c8.map(d=>d.t),backgroundColor:PAL,borderRadius:4,borderWidth:0}]}, options:{indexAxis:'y',responsive:true,maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}}, scales:{x:{grid:{color:GR},ticks:{callback:fmtK}},y:{grid:{display:false}}}} });
 
   const t20=m.forn.slice(0,20);
-  new Chart('cForn',{type:'bar',
-    data:{labels:t20.map(d=>d.nc),
-      datasets:[{data:t20.map(d=>d.s),borderRadius:4,borderWidth:0,
-        backgroundColor:t20.map(d=>d.st==='Vencido'?C.r:C.b)}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
-      scales:{x:{grid:{color:GR},ticks:{callback:fmtK}},y:{grid:{display:false},ticks:{font:{size:10}}}}}
-  });
-
-  new Chart('cFilStack',{type:'bar',
-    data:{labels:m.filial.map(d=>d.n.length>22?d.n.slice(0,22)+'…':d.n),
-      datasets:[{label:'Vencido',data:m.filial.map(d=>d.v),backgroundColor:C.r,borderWidth:0},
-                {label:'A Vencer',data:m.filial.map(d=>d.a),backgroundColor:C.b,borderRadius:3,borderWidth:0}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'top',labels:{color:'#8b949e',boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}},
-      scales:{x:{stacked:true,grid:{color:GR},ticks:{callback:fmtK}},y:{stacked:true,grid:{display:false},ticks:{font:{size:10}}}}}
-  });
-
-  new Chart('cPie',{type:'doughnut',
-    data:{labels:m.cat.map(d=>d.n.length>20?d.n.slice(0,20)+'…':d.n),
-      datasets:[{data:m.cat.map(d=>d.t),backgroundColor:PAL,borderColor:'#161b22',borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
-      plugins:{legend:{position:'right',labels:{color:'#8b949e',boxWidth:10,padding:7,font:{size:10}}},
-        tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)}}}}
-  });
-
-  new Chart('cCatStack',{type:'bar',
-    data:{labels:m.cat.map(d=>d.n.length>16?d.n.slice(0,16)+'…':d.n),
-      datasets:[{label:'Vencido',data:m.cat.map(d=>d.v),backgroundColor:C.r,borderWidth:0},
-                {label:'A Vencer',data:m.cat.map(d=>d.t-d.v),backgroundColor:C.b,borderRadius:3,borderWidth:0}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'top',labels:{color:'#8b949e',boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}},
-      scales:{x:{stacked:true,grid:{color:GR},ticks:{callback:fmtK}},y:{stacked:true,grid:{display:false},ticks:{font:{size:10}}}}}
-  });
+  new Chart('cForn',{type:'bar', data:{labels:t20.map(d=>d.nc), datasets:[{data:t20.map(d=>d.s),borderRadius:4,borderWidth:0, backgroundColor:t20.map(d=>d.st==='Vencido'?C.r:C.b)}]}, options:{indexAxis:'y',responsive:true,maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}}, scales:{x:{grid:{color:GR},ticks:{callback:fmtK}},y:{grid:{display:false},ticks:{font:{size:10}}}}} });
+  new Chart('cFilStack',{type:'bar', data:{labels:m.filial.map(d=>d.n.length>22?d.n.slice(0,22)+'…':d.n), datasets:[{label:'Vencido',data:m.filial.map(d=>d.v),backgroundColor:C.r,borderWidth:0}, {label:'A Vencer',data:m.filial.map(d=>d.a),backgroundColor:C.b,borderRadius:3,borderWidth:0}]}, options:{indexAxis:'y',responsive:true,maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{color:'#8b949e',boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}, scales:{x:{stacked:true,grid:{color:GR},ticks:{callback:fmtK}},y:{stacked:true,grid:{display:false},ticks:{font:{size:10}}}}} });
+  new Chart('cPie',{type:'doughnut', data:{labels:m.cat.map(d=>d.n.length>20?d.n.slice(0,20)+'…':d.n), datasets:[{data:m.cat.map(d=>d.t),backgroundColor:PAL,borderColor:'#161b22',borderWidth:2}]}, options:{responsive:true,maintainAspectRatio:false,cutout:'55%', plugins:{legend:{position:'right',labels:{color:'#8b949e',boxWidth:10,padding:7,font:{size:10}}}, tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)}}}} });
+  new Chart('cCatStack',{type:'bar', data:{labels:m.cat.map(d=>d.n.length>16?d.n.slice(0,16)+'…':d.n), datasets:[{label:'Vencido',data:m.cat.map(d=>d.v),backgroundColor:C.r,borderWidth:0}, {label:'A Vencer',data:m.cat.map(d=>d.t-d.v),backgroundColor:C.b,borderRadius:3,borderWidth:0}]}, options:{indexAxis:'y',responsive:true,maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{color:'#8b949e',boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}, scales:{x:{stacked:true,grid:{color:GR},ticks:{callback:fmtK}},y:{stacked:true,grid:{display:false},ticks:{font:{size:10}}}}} });
 }
 
-// ═══════════════════════════════════════════════
-// TABELAS ESTÁTICAS
-// ═══════════════════════════════════════════════
 function dcls(d){return d>90?'color:var(--red);font-weight:700':d>60?'color:var(--orange);font-weight:600':d>30?'color:#e3b341;font-weight:600':'color:var(--muted)'}
 
 function renderTabelas(m) {
@@ -623,9 +570,6 @@ function renderTabelas(m) {
   }).join('');
 }
 
-// ═══════════════════════════════════════════════
-// FILTROS E TABELA DE REGISTROS
-// ═══════════════════════════════════════════════
 function popular() {
   const fils=[...new Set(DADOS.map(r=>r.NOME_FANTASIA))].sort();
   const cats=[...new Set(DADOS.map(r=>r.CLA_DESCRICAO))].sort();
@@ -667,8 +611,7 @@ function ord(col,th){
 
 function agingBadge(r){
   if(!r.AGING) return '<span style="color:var(--muted);font-size:10px">—</span>';
-  const m={'1–30 dias':'background:#3d1a1a;color:#f85149','31–60 dias':'background:#2d2005;color:#d29922',
-    '61–90 dias':'background:#1a1a0a;color:#e3b341','90+ dias':'background:#5a1010;color:#ff6b6b;font-weight:800'};
+  const m={'1–30 dias':'background:#3d1a1a;color:#f85149','31–60 dias':'background:#2d2005;color:#d29922', '61–90 dias':'background:#1a1a0a;color:#e3b341','90+ dias':'background:#5a1010;color:#ff6b6b;font-weight:800'};
   return `<span class="badge" style="${m[r.AGING]||''}">${r.AGING}</span>`;
 }
 
@@ -681,9 +624,7 @@ function renderReg(){
   const pag=sorted.slice((pagAtual-1)*TAM_PAG, pagAtual*TAM_PAG);
   document.getElementById('tbReg').innerHTML=pag.map(r=>{
     const v=r.STATUS_VENCIMENTO==='Vencido';
-    const diasTxt = v && r.DIAS_ATRASO>0
-      ? `<span style="${dcls(r.DIAS_ATRASO)}">${r.DIAS_ATRASO} dias</span>`
-      : '—';
+    const diasTxt = v && r.DIAS_ATRASO>0 ? `<span style="${dcls(r.DIAS_ATRASO)}">${r.DIAS_ATRASO} dias</span>` : '—';
     return `<tr class="${v?'rv':''}">
       <td><span class="badge ${v?'bv':'ba'}">${v?'VENCIDO':'EM ABERTO'}</span></td>
       <td>${agingBadge(r)}</td>
@@ -705,9 +646,6 @@ function renderReg(){
 
 function pag(d){pagAtual+=d;renderReg();}
 
-// ═══════════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════════
 function pg(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -717,7 +655,7 @@ function pg(id,btn){
 function show(id){document.getElementById(id).style.display='flex';}
 function hide(id){document.getElementById(id).style.display='none';}
 
-window.addEventListener('DOMContentLoaded', init);
+// Removida a carga direta automática da janela para esperar pela validação da senha.
 </script>
 </body>
 </html>
