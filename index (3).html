@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard MKT – INC Empreendimentos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;
+  --red:#f85149;--red-s:#2d1111;--red-m:#6e1f1f;
+  --green:#3fb950;--green-s:#122115;
+  --orange:#d29922;--purple:#bc8cff;
+  --hgrad:linear-gradient(135deg,#1c2230,#0d1117);
+  --logo-filter:none;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* HEADER */
+.header{background:var(--hgrad);color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:62px;box-shadow:0 2px 12px rgba(0,0,0,.5);border-bottom:1px solid var(--border)}
+.header-left{display:flex;align-items:center;gap:16px}
+.logo{height:36px;filter:var(--logo-filter)}
+.header-title h1{font-size:15px;font-weight:700;color:#fff;letter-spacing:.2px}
+.header-title p{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
+.header-right{font-size:11px;color:rgba(255,255,255,.45);text-align:right;display:flex;align-items:center;gap:12px}
+.header-right strong{display:block;font-size:12px;color:rgba(255,255,255,.8)}
+.btn-refresh{background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.25);color:#58a6ff;padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;transition:.15s;font-weight:600}
+.btn-refresh:hover{background:rgba(88,166,255,.22)}
+.btn-refresh:disabled{opacity:.4;cursor:default}
+
+/* NAV */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0}
+.nav-btn{padding:11px 18px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:.15s}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-btn:hover:not(.active){color:var(--text)}
+
+/* PANELS */
+.panel{display:none;padding:20px 24px}
+.panel.active{display:block}
+
+/* ALERT — single line, only top debtor */
+.alert-danger{
+  display:flex;align-items:center;gap:12px;
+  background:var(--red-s);border:1px solid var(--red-m);
+  border-left:4px solid var(--red);
+  border-radius:8px;padding:12px 18px;margin-bottom:18px;
+  font-size:13px;color:var(--red);
+}
+.alert-danger .adot{font-size:18px;flex-shrink:0}
+.alert-danger .atxt{flex:1;line-height:1.5}
+.alert-danger .atxt strong{font-weight:700;color:#ff6b6b}
+.alert-danger .atxt .adays{color:var(--orange);font-weight:700}
+.alert-danger .aval{font-size:17px;font-weight:800;white-space:nowrap;color:#ff6b6b}
+
+/* KPI CARDS */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+
+.kpi{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:16px 18px;
+  position:relative;overflow:hidden;
+  transition:transform .15s,box-shadow .15s;
+}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
+
+/* colored left accent bar */
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:12px 0 0 12px}
+.kpi.c-blue::before  {background:#58a6ff}
+.kpi.c-red::before   {background:#f85149}
+.kpi.c-green::before {background:#3fb950}
+.kpi.c-orange::before{background:#d29922}
+.kpi.c-purple::before{background:#bc8cff}
+
+.kpi-icon{font-size:20px;margin-bottom:6px;display:block}
+.kpi-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.kpi-value{font-size:28px;font-weight:800;line-height:1;letter-spacing:-.5px}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.3}
+
+.kpi-value.c-blue  {color:#58a6ff}
+.kpi-value.c-red   {color:#f85149}
+.kpi-value.c-green {color:#3fb950}
+.kpi-value.c-orange{color:#d29922}
+.kpi-value.c-purple{color:#bc8cff}
+
+/* CHARTS GRID */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+@media(max-width:768px){.charts-row{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.chart-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.chart-title .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot-red{background:var(--red)}
+.dot-accent{background:var(--accent)}
+canvas{max-width:100%}
+
+/* BOTTOM GRID */
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.bottom-row{grid-template-columns:1fr}}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{background:var(--surface2);padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)}
+.data-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.data-table tr:hover td{background:var(--surface2)}
+.data-table tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.badge.red{background:var(--red-s);color:var(--red);border:1px solid var(--red-m)}
+.badge.green{background:var(--green-s);color:var(--green);border:1px solid #1e4a27}
+
+/* CATEGORY BARS */
+.cat-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:12px}
+.cat-label{width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:11px}
+.cat-bar-wrap{flex:1;background:var(--surface2);border-radius:4px;height:10px;overflow:hidden}
+.cat-bar-inner{height:100%;border-radius:4px;transition:width .5s}
+.cat-val{width:74px;text-align:right;font-weight:700;font-size:11px;color:var(--text)}
+
+/* SUPPLIER TABLE */
+.sup-table{width:100%;border-collapse:collapse;font-size:12px}
+.sup-table th{padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);border-bottom:2px solid var(--border);text-transform:uppercase;letter-spacing:.3px}
+.sup-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.sup-table tr:hover td{background:var(--surface2)}
+
+/* LOADING SCREEN */
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 20px;gap:16px;color:var(--muted)}
+.spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-screen p{font-size:14px}
+
+/* ERROR SCREEN */
+.error-screen{margin:24px;background:var(--red-s);border:1px solid var(--red-m);border-radius:10px;padding:20px;color:var(--red);font-size:13px}
+.error-screen strong{display:block;font-size:15px;margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <img src="logo fundo transparente.png" alt="INC" class="logo" onerror="this.style.display='none'">
+    <div class="header-title">
+      <h1>Dashboard · Contas a Pagar · MKT</h1>
+      <p>INC Empreendimentos — JF · Uberlândia · Uberaba · São João del-Rei · SJRP · SJC</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div style="text-align:right">
+      <strong id="hdr-updated">Carregando...</strong>
+      <span>Última atualização</span>
+    </div>
+    <button class="btn-refresh" id="btn-refresh" onclick="loadFromSheets()" title="Recarregar dados do Google Sheets">🔄 Atualizar</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn active" onclick="showPanel('visao',this)">👁 Visão Geral</button>
+  <button class="nav-btn" onclick="showPanel('fornecedores',this)">🏢 Fornecedores</button>
+  <button class="nav-btn" onclick="showPanel('filiais',this)">🏠 Filiais</button>
+  <button class="nav-btn" onclick="showPanel('categorias',this)">📁 Categorias</button>
+  <button class="nav-btn" onclick="showPanel('registros',this)">🔍 Todos os Registros</button>
+</div>
+
+<!-- LOADING / ERROR STATE (shown before data loads) -->
+<div id="loading-screen" class="loading-screen">
+  <div class="spinner"></div>
+  <p>Buscando dados do Google Sheets...</p>
+</div>
+<div id="error-screen" class="error-screen" style="display:none">
+  <strong>⚠️ Erro ao carregar dados</strong>
+  <span id="error-msg"></span>
+</div>
+
+<!-- ALL PANELS (hidden until data loads) -->
+<div id="main-content" style="display:none">
+
+<!-- PANEL: VISÃO GERAL -->
+<div class="panel active" id="panel-visao">
+  <div id="alerts-container"></div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-row">
+    <div class="kpi c-blue">
+      <span class="kpi-icon">💰</span>
+      <div class="kpi-label">Saldo Total em Aberto</div>
+      <div class="kpi-value c-blue" id="kpi-total">—</div>
+      <div class="kpi-sub" id="kpi-total-sub">— parcelas</div>
+    </div>
+    <div class="kpi c-red">
+      <span class="kpi-icon">🚨</span>
+      <div class="kpi-label">Total Vencido</div>
+      <div class="kpi-value c-red" id="kpi-vencido">—</div>
+      <div class="kpi-sub" id="kpi-vencido-sub">— parcelas</div>
+    </div>
+    <div class="kpi c-green">
+      <span class="kpi-icon">📅</span>
+      <div class="kpi-label">A Vencer (CC MKT)</div>
+      <div class="kpi-value c-green" id="kpi-avencer">—</div>
+      <div class="kpi-sub" id="kpi-avencer-sub">— parcelas</div>
+    </div>
+    <div class="kpi c-orange">
+      <span class="kpi-icon">📊</span>
+      <div class="kpi-label" id="kpi-fluxo-label">Fluxo — Próximo Mês</div>
+      <div class="kpi-value c-orange" id="kpi-fluxo">—</div>
+      <div class="kpi-sub" id="kpi-fluxo-sub">Vencimentos do mês seguinte</div>
+    </div>
+    <div class="kpi c-purple">
+      <span class="kpi-icon">🏢</span>
+      <div class="kpi-label">Maior Fornecedor Vencido</div>
+      <div class="kpi-value c-purple" id="kpi-maior-val">—</div>
+      <div class="kpi-sub" id="kpi-maior-nome">—</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-red"></span> AGING — Vencidos por Faixa (CC MKT)</div>
+      <canvas id="chart-aging" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"><span class="dot dot-accent"></span> A Vencer — Projeção Mensal (CC MKT)</div>
+      <canvas id="chart-proj" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="bottom-row">
+    <div class="chart-card">
+      <div class="chart-title">🏠 Top 8 Filiais</div>
+      <div id="filiais-chart"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📁 Saldo por Categoria</div>
+      <div id="cat-chart"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: FORNECEDORES -->
+<div class="panel" id="panel-fornecedores">
+  <div class="chart-card">
+    <div class="chart-title">🏢 Fornecedores — Saldo em Aberto</div>
+    <div style="overflow-x:auto">
+      <table class="sup-table" id="sup-table">
+        <thead><tr><th>Fornecedor</th><th>APs</th><th>Total em Aberto</th><th>Vencido</th><th>A Vencer</th><th>Parcelas</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: FILIAIS -->
+<div class="panel" id="panel-filiais">
+  <div class="chart-card">
+    <div class="chart-title">🏠 Filiais — Saldo em Aberto</div>
+    <div id="filiais-table-wrap" style="overflow-x:auto"></div>
+  </div>
+</div>
+
+<!-- PANEL: CATEGORIAS -->
+<div class="panel" id="panel-categorias">
+  <div class="chart-card">
+    <div class="chart-title">📁 Categorias — Saldo em Aberto</div>
+    <div id="cat-table-wrap" style="overflow-x:auto"></div>
+  </div>
+</div>
+
+<!-- PANEL: REGISTROS -->
+<div class="panel" id="panel-registros">
+  <div class="chart-card">
+    <div class="chart-title">🔍 Todos os Registros</div>
+    <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <input id="filter-text" type="text" placeholder="Buscar fornecedor, categoria..."
+        style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);color:var(--text);flex:1;min-width:200px">
+      <select id="filter-status" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);color:var(--text)">
+        <option value="">Todos</option>
+        <option value="vencido">Vencido</option>
+        <option value="avencer">A Vencer</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table" id="reg-table">
+        <thead><tr><th>AP</th><th>Fornecedor</th><th>Filial</th><th>Categoria</th><th>NR Doc / Parcela</th><th>Vencimento</th><th>Saldo Aberto</th><th>Status</th><th>Atraso/Prazo</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main-content -->
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbw3PRhwQRz5TtHqmlz_UWUwWAam4onXPD_ZlI66zV0vkO6XlogjA1N0ELDnw-qRGt1R/exec';
+
+// ─── STATE ─────────────────────────────────────────────
+let RAW = [];
+let chartAging = null;
+let chartProj  = null;
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+
+// ─── UTILS ─────────────────────────────────────────────
+const fmtBRL = v => v == null ? '—' : 'R$ ' + (Math.abs(v) >= 1e6
+  ? (v/1e6).toFixed(2).replace('.',',') + 'M'
+  : Math.abs(v) >= 1e3
+  ? (v/1e3).toFixed(0) + 'K'
+  : v.toFixed(2).replace('.',','));
+
+const fmtFull = v => 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function parseDate(val){
+  if(!val) return null;
+  if(val instanceof Date) return val;
+  // String dd/mm/yyyy ou dd/mm/yy
+  if(typeof val === 'string'){
+    const s = val.trim();
+    if(s.includes('/')){
+      const parts = s.split('/');
+      if(parts.length === 3){
+        let [d,m,y] = parts;
+        if(y.length === 2) y = '20' + y;
+        const dt = new Date(+y, +m-1, +d);
+        if(!isNaN(dt)) return dt;
+      }
+    }
+    // ISO yyyy-mm-dd
+    if(s.match(/^\d{4}-\d{2}-\d{2}/)){
+      const dt = new Date(s);
+      if(!isNaN(dt)) return dt;
+    }
+  }
+  // Número serial do Excel
+  if(typeof val === 'number'){
+    const dt = new Date(Math.round((val - 25569) * 86400 * 1000));
+    if(!isNaN(dt)) return dt;
+  }
+  return null;
+}
+
+const MONTH_PT   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MONTH_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+// ─── NAV ───────────────────────────────────────────────
+function showPanel(id, btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+// ─── LOAD FROM GOOGLE SHEETS ───────────────────────────
+async function loadFromSheets(){
+  const loadEl  = document.getElementById('loading-screen');
+  const errEl   = document.getElementById('error-screen');
+  const mainEl  = document.getElementById('main-content');
+  const btnRef  = document.getElementById('btn-refresh');
+
+  loadEl.style.display = 'flex';
+  errEl.style.display  = 'none';
+  mainEl.style.display = 'none';
+  btnRef.disabled = true;
+  btnRef.textContent = '⏳ Atualizando...';
+
+  try {
+    // Usa jsonp-like via fetch com mode no-cors não funciona; usamos fetch normal
+    // O Apps Script com doGet() e acesso "Qualquer um, mesmo anônimo" responde com CORS ok
+    const res = await fetch(SHEETS_URL);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    if(!Array.isArray(json) || json.length === 0) throw new Error('Planilha retornou vazia ou sem dados.');
+    processData(json);
+    loadEl.style.display  = 'none';
+    mainEl.style.display  = 'block';
+  } catch(err) {
+    loadEl.style.display  = 'none';
+    errEl.style.display   = 'block';
+    document.getElementById('error-msg').textContent =
+      ' ' + err.message + '. Verifique se o Web App do Apps Script está implantado como "Qualquer pessoa, mesmo anônimos" e tente recarregar.';
+  } finally {
+    btnRef.disabled = false;
+    btnRef.textContent = '🔄 Atualizar';
+  }
+}
+
+// ─── PROCESS DATA ───────────────────────────────────────
+function processData(rows){
+  // Usa nomes exatos das colunas da planilha INC
+  RAW = rows.map(r => {
+    const rawDate = r['VENCIMENTO'] || '';
+    const dt = parseDate(rawDate);
+    if(dt) dt.setHours(0,0,0,0);
+
+    // SALDO_EM_ABERTO é o valor real que falta pagar — é ele que usamos em todos os cálculos
+    const rawSaldo = String(r['SALDO_EM_ABERTO'] ?? r['LIQUIDO'] ?? r['VALOR'] ?? '0')
+      .replace(/[^0-9,.\-]/g,'').replace(',','.');
+    const val = parseFloat(rawSaldo) || 0;
+
+    // Para vencido usamos a coluna VENCIMENTO (data), não STATUS_VENCIMENTO
+    const vencido = dt ? dt < TODAY : false;
+
+    // Dias de atraso/antecedência
+    const diffDias = dt ? Math.floor((TODAY - dt) / (1000*60*60*24)) : null;
+
+    return {
+      fornecedor  : String(r['AGENTE']        || '(sem nome)').trim(),
+      codAgente   : String(r['COD_AGENTE']    || '').trim(),
+      filial      : String(r['NOME_FANTASIA']  || r['COD_FILIAL'] || '—').trim(),
+      codFilial   : String(r['COD_FILIAL']     || '').trim(),
+      categoria   : String(r['CLA_DESCRICAO']  || '—').trim(),
+      catNat      : String(r['CLA_NATUREZA']   || '').trim(),
+      ap          : String(r['AP']             || '').trim(),
+      nrDoc       : String(r['NR_DOC']         || '').trim(),
+      parcela     : String(r['PARCELA']        || '').trim(),
+      formaPgto   : String(r['FORMA_PAGAMENTO']|| '').trim(),
+      vencimento  : dt,
+      emissao     : parseDate(r['EMISSAO']),
+      valor       : val,                          // SALDO_EM_ABERTO
+      valorTotal  : parseFloat(String(r['VALOR']||'0').replace(/[^0-9,.\-]/g,'').replace(',','.')) || 0,
+      liquido     : parseFloat(String(r['LIQUIDO']||'0').replace(/[^0-9,.\-]/g,'').replace(',','.')) || 0,
+      vencido,
+      diffDias,
+      statusVenc  : String(r['STATUS_VENCIMENTO'] || '').trim(),
+      cnpj        : String(r['CNPJ'] || r['CPF'] || '').trim(),
+      banco       : String(r['BANCO'] || '').trim(),
+      pix         : String(r['CHAVE_PIX'] || '').trim(),
+    };
+  }).filter(r => r.valor > 0);
+
+  document.getElementById('hdr-updated').textContent =
+    'Atualizado: ' + new Date().toLocaleDateString('pt-BR') +
+    ' às ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+  renderAll();
+}
+
+// ─── RENDER ALL ─────────────────────────────────────────
+function renderAll(){
+  renderAlerts();
+  renderKPIs();
+  renderAgingChart();
+  renderProjChart();
+  renderFiliaisBar();
+  renderCatBar();
+  renderSupTable();
+  renderFiliaisTable();
+  renderCatTable();
+  renderRegTable();
+}
+
+// ─── ALERTS ─────────────────────────────────────────────
+function renderAlerts(){
+  const fornMap = {};
+  RAW.filter(r=>r.vencido).forEach(r=>{
+    if(!fornMap[r.fornecedor]) fornMap[r.fornecedor] = {total:0, minDate:r.vencimento};
+    fornMap[r.fornecedor].total += r.valor;
+    if(r.vencimento && r.vencimento < fornMap[r.fornecedor].minDate)
+      fornMap[r.fornecedor].minDate = r.vencimento;
+  });
+  const sorted = Object.entries(fornMap).sort((a,b)=>b[1].total - a[1].total);
+  const container = document.getElementById('alerts-container');
+  if(sorted.length === 0){ container.innerHTML = ''; return; }
+  const [topNome, topInfo] = sorted[0];
+  const dias = topInfo.minDate ? Math.floor((TODAY - topInfo.minDate)/(1000*60*60*24)) : 0;
+  const totalVenc = RAW.filter(r=>r.vencido).reduce((s,r)=>s+r.valor,0);
+  container.innerHTML = `
+    <div class="alert-danger">
+      <span class="adot">🚨</span>
+      <div class="atxt">
+        <strong>${topNome}</strong>: ${fmtFull(topInfo.total)} vencido há <span class="adays">${dias} dias</span>.
+        Regularize com urgência.
+        ${sorted.length > 1 ? `<span style="color:var(--muted);font-size:12px">&nbsp;·&nbsp; +${sorted.length-1} outro${sorted.length>2?'s':''} fornecedor${sorted.length>2?'es':''} com débito vencido.</span>` : ''}
+      </div>
+      <div class="aval">${fmtFull(totalVenc)}</div>
+    </div>`;
+}
+
+// ─── KPIs ───────────────────────────────────────────────
+function renderKPIs(){
+  const total    = RAW.reduce((s,r)=>s+r.valor,0);
+  const vencidos = RAW.filter(r=>r.vencido);
+  const avencer  = RAW.filter(r=>!r.vencido);
+  const nextMonth    = new Date(TODAY.getFullYear(), TODAY.getMonth()+1, 1);
+  const nextMonthEnd = new Date(TODAY.getFullYear(), TODAY.getMonth()+2, 0);
+  const fluxoRows = RAW.filter(r=>r.vencimento && r.vencimento >= nextMonth && r.vencimento <= nextMonthEnd);
+  const fluxoTotal = fluxoRows.reduce((s,r)=>s+r.valor,0);
+  const fluxoLabel = MONTH_FULL[nextMonth.getMonth()] + '/' + String(nextMonth.getFullYear()).slice(2);
+  const fornVenc = {};
+  vencidos.forEach(r=>{ fornVenc[r.fornecedor]=(fornVenc[r.fornecedor]||0)+r.valor; });
+  const topForn = Object.entries(fornVenc).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('kpi-total').textContent     = fmtBRL(total);
+  document.getElementById('kpi-total-sub').textContent = RAW.length + ' parcelas';
+  document.getElementById('kpi-vencido').textContent   = fmtBRL(vencidos.reduce((s,r)=>s+r.valor,0));
+  document.getElementById('kpi-vencido-sub').textContent = vencidos.length + ' parcelas · ' + (RAW.length?vencidos.length/RAW.length*100:0).toFixed(1) + '%';
+  document.getElementById('kpi-avencer').textContent   = fmtBRL(avencer.reduce((s,r)=>s+r.valor,0));
+  document.getElementById('kpi-avencer-sub').textContent = avencer.length + ' parcelas · ' + (RAW.length?avencer.length/RAW.length*100:0).toFixed(1) + '%';
+  document.getElementById('kpi-fluxo-label').textContent = 'Fluxo — ' + MONTH_FULL[nextMonth.getMonth()];
+  document.getElementById('kpi-fluxo').textContent     = fmtBRL(fluxoTotal);
+  document.getElementById('kpi-fluxo-sub').textContent = 'Vencimentos em ' + fluxoLabel + ' (' + fluxoRows.length + ' parcelas)';
+  if(topForn){
+    document.getElementById('kpi-maior-val').textContent  = fmtBRL(topForn[1]);
+    document.getElementById('kpi-maior-nome').textContent = topForn[0];
+  }
+}
+
+// ─── AGING CHART ────────────────────────────────────────
+function renderAgingChart(){
+  const bands = [{label:'1-30 dias',min:1,max:30},{label:'31-60 dias',min:31,max:60},{label:'61-90 dias',min:61,max:90},{label:'90+ dias',min:91,max:9999}];
+  const counts = bands.map(b=>({label:b.label,total:0,count:0}));
+  RAW.filter(r=>r.vencido&&r.vencimento).forEach(r=>{
+    const dias = Math.floor((TODAY - r.vencimento)/(1000*60*60*24));
+    const bi = bands.findIndex(b=>dias>=b.min&&dias<=b.max);
+    if(bi>=0){ counts[bi].total+=r.valor; counts[bi].count++; }
+  });
+  if(chartAging) chartAging.destroy();
+  chartAging = new Chart(document.getElementById('chart-aging'),{
+    type:'bar',
+    data:{
+      labels:counts.map(c=>`${c.label} (${c.count})`),
+      datasets:[{data:counts.map(c=>c.total),backgroundColor:['#f85149','#d29922','#bc8cff','#8b2020'],borderRadius:6,borderSkipped:false}]
+    },
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtFull(ctx.raw)}}},
+      scales:{y:{ticks:{callback:v=>fmtBRL(v),color:'#8b949e'},grid:{color:'rgba(255,255,255,.05)'}},x:{grid:{display:false},ticks:{color:'#8b949e'}}}}
+  });
+}
+
+// ─── PROJEÇÃO MENSAL ────────────────────────────────────
+function renderProjChart(){
+  const months = [];
+  for(let i=1;i<=12;i++){
+    const d = new Date(TODAY.getFullYear(), TODAY.getMonth()+i, 1);
+    months.push({label:MONTH_PT[d.getMonth()]+'/'+String(d.getFullYear()).slice(2),year:d.getFullYear(),month:d.getMonth(),total:0,count:0});
+  }
+  RAW.filter(r=>!r.vencido&&r.vencimento).forEach(r=>{
+    const idx = months.findIndex(x=>x.year===r.vencimento.getFullYear()&&x.month===r.vencimento.getMonth());
+    if(idx>=0){ months[idx].total+=r.valor; months[idx].count++; }
+  });
+  if(chartProj) chartProj.destroy();
+  chartProj = new Chart(document.getElementById('chart-proj'),{
+    type:'bar',
+    data:{
+      labels:months.map(m=>m.label),
+      datasets:[{data:months.map(m=>m.total),backgroundColor:months.map((m,i)=>i===0?'#58a6ff':'#1f4e8c'),borderRadius:6,borderSkipped:false}]
+    },
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
+      const idx=ctx.dataIndex; return ` ${fmtFull(ctx.raw)} · ${months[idx].count} parcelas`;
+    }}}},
+    scales:{y:{ticks:{callback:v=>fmtBRL(v),color:'#8b949e'},grid:{color:'rgba(255,255,255,.05)'}},x:{grid:{display:false},ticks:{color:'#8b949e'}}}}
+  });
+}
+
+// ─── FILIAIS BAR ────────────────────────────────────────
+function renderFiliaisBar(){
+  const map = {};
+  RAW.forEach(r=>{ map[r.filial]=(map[r.filial]||{v:0,a:0}); r.vencido?map[r.filial].v+=r.valor:map[r.filial].a+=r.valor; });
+  const sorted = Object.entries(map).sort((a,b)=>(b[1].v+b[1].a)-(a[1].v+a[1].a)).slice(0,8);
+  const maxVal = Math.max(...sorted.map(([,v])=>v.v+v.a));
+  let html = '<div style="margin-top:4px">';
+  sorted.forEach(([nome,vals])=>{
+    const tot = vals.v+vals.a;
+    const pctV = tot>0?vals.v/tot*100:0;
+    html+=`<div class="cat-row">
+      <div class="cat-label" title="${nome}">${nome}</div>
+      <div class="cat-bar-wrap">
+        <div style="height:100%;display:flex;border-radius:4px;overflow:hidden">
+          <div style="width:${pctV}%;background:var(--red);transition:width .4s"></div>
+          <div style="flex:1;background:var(--accent);transition:width .4s"></div>
+        </div>
+      </div>
+      <div class="cat-val">${fmtBRL(tot)}</div>
+    </div>`;
+  });
+  html+='<div style="font-size:10px;color:var(--muted);margin-top:8px"><span style="color:var(--red)">■</span> Vencido &nbsp;<span style="color:var(--accent)">■</span> A Vencer</div></div>';
+  document.getElementById('filiais-chart').innerHTML = html;
+}
+
+// ─── CATEGORIA BAR ──────────────────────────────────────
+function renderCatBar(){
+  const map = {};
+  RAW.forEach(r=>{
+    if(!map[r.categoria]) map[r.categoria]={v:0,a:0};
+    r.vencido ? map[r.categoria].v+=r.valor : map[r.categoria].a+=r.valor;
+  });
+  const sorted = Object.entries(map).sort((a,b)=>(b[1].v+b[1].a)-(a[1].v+a[1].a)).slice(0,8);
+  const maxVal = Math.max(...sorted.map(([,v])=>v.v+v.a));
+  let html = '<div style="margin-top:4px">';
+  sorted.forEach(([cat,vals])=>{
+    const tot = vals.v+vals.a;
+    const pctV = tot>0?vals.v/tot*100:0;
+    html+=`<div class="cat-row">
+      <div class="cat-label" title="${cat}">${cat}</div>
+      <div class="cat-bar-wrap">
+        <div style="height:100%;display:flex;border-radius:4px;overflow:hidden">
+          <div style="width:${pctV}%;background:var(--red);transition:width .4s"></div>
+          <div style="flex:1;background:var(--accent);transition:width .4s"></div>
+        </div>
+      </div>
+      <div class="cat-val">${fmtBRL(tot)}</div>
+    </div>`;
+  });
+  html+='<div style="font-size:10px;color:var(--muted);margin-top:8px"><span style="color:var(--red)">■</span> Vencido &nbsp;<span style="color:var(--accent)">■</span> A Vencer</div></div>';
+  document.getElementById('cat-chart').innerHTML = html;
+}
+
+// ─── SUPPLIER TABLE ─────────────────────────────────────
+function renderSupTable(){
+  const map = {};
+  RAW.forEach(r=>{
+    if(!map[r.fornecedor]) map[r.fornecedor]={total:0,vencido:0,avencer:0,count:0,aps:new Set()};
+    map[r.fornecedor].total+=r.valor; map[r.fornecedor].count++;
+    if(r.ap) map[r.fornecedor].aps.add(r.ap);
+    r.vencido?map[r.fornecedor].vencido+=r.valor:map[r.fornecedor].avencer+=r.valor;
+  });
+  const sorted = Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
+  document.querySelector('#sup-table tbody').innerHTML = sorted.map(([nome,d])=>`<tr>
+    <td><strong>${nome}</strong></td>
+    <td style="font-size:11px;color:var(--muted)">${[...d.aps].slice(0,4).join(', ')+(d.aps.size>4?'…':'') || '—'}</td>
+    <td>${fmtFull(d.total)}</td>
+    <td style="color:var(--red)">${d.vencido>0?fmtFull(d.vencido):'—'}</td>
+    <td style="color:var(--accent)">${d.avencer>0?fmtFull(d.avencer):'—'}</td>
+    <td>${d.count}</td>
+  </tr>`).join('');
+}
+
+// ─── FILIAIS TABLE ──────────────────────────────────────
+function renderFiliaisTable(){
+  const map = {};
+  RAW.forEach(r=>{
+    if(!map[r.filial]) map[r.filial]={total:0,vencido:0,avencer:0,count:0};
+    map[r.filial].total+=r.valor; map[r.filial].count++;
+    r.vencido?map[r.filial].vencido+=r.valor:map[r.filial].avencer+=r.valor;
+  });
+  const sorted = Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
+  document.getElementById('filiais-table-wrap').innerHTML = `
+    <table class="sup-table"><thead><tr><th>Filial</th><th>Total</th><th>Vencido</th><th>A Vencer</th><th>Parcelas</th></tr></thead>
+    <tbody>${sorted.map(([nome,d])=>`<tr>
+      <td><strong>${nome}</strong></td>
+      <td>${fmtFull(d.total)}</td>
+      <td style="color:var(--red)">${d.vencido>0?fmtFull(d.vencido):'—'}</td>
+      <td style="color:var(--accent)">${d.avencer>0?fmtFull(d.avencer):'—'}</td>
+      <td>${d.count}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+// ─── CAT TABLE ──────────────────────────────────────────
+function renderCatTable(){
+  const map = {};
+  RAW.forEach(r=>{
+    if(!map[r.categoria]) map[r.categoria]={total:0,vencido:0,avencer:0,count:0,aps:new Set()};
+    map[r.categoria].total+=r.valor; map[r.categoria].count++;
+    if(r.ap) map[r.categoria].aps.add(r.ap);
+    r.vencido?map[r.categoria].vencido+=r.valor:map[r.categoria].avencer+=r.valor;
+  });
+  const sorted = Object.entries(map).sort((a,b)=>b[1].total-a[1].total);
+  document.getElementById('cat-table-wrap').innerHTML = `
+    <table class="sup-table"><thead><tr><th>Categoria (CLA_DESCRICAO)</th><th>Saldo Aberto</th><th>Vencido</th><th>A Vencer</th><th>APs</th><th>Parcelas</th></tr></thead>
+    <tbody>${sorted.map(([cat,d])=>`<tr>
+      <td><strong>${cat}</strong></td>
+      <td>${fmtFull(d.total)}</td>
+      <td style="color:var(--red)">${d.vencido>0?fmtFull(d.vencido):'—'}</td>
+      <td style="color:var(--accent)">${d.avencer>0?fmtFull(d.avencer):'—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${d.aps.size}</td>
+      <td>${d.count}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+// ─── REGISTROS TABLE ────────────────────────────────────
+let filteredReg = [];
+function renderRegTable(){
+  filteredReg = [...RAW];
+  applyFilters();
+}
+function applyFilters(){
+  const txt = document.getElementById('filter-text').value.toLowerCase();
+  const sts = document.getElementById('filter-status').value;
+  let rows = filteredReg;
+  if(txt) rows = rows.filter(r=>
+    r.fornecedor.toLowerCase().includes(txt)||
+    r.categoria.toLowerCase().includes(txt)||
+    r.filial.toLowerCase().includes(txt)||
+    r.ap.toLowerCase().includes(txt)||
+    r.nrDoc.toLowerCase().includes(txt)
+  );
+  if(sts==='vencido') rows=rows.filter(r=>r.vencido);
+  if(sts==='avencer') rows=rows.filter(r=>!r.vencido);
+  const tbody = document.querySelector('#reg-table tbody');
+  tbody.innerHTML = rows.slice(0,300).map(r=>{
+    const diasStr = r.diffDias != null
+      ? (r.vencido
+          ? `<span style="color:var(--red);font-weight:600">+${r.diffDias}d</span>`
+          : `<span style="color:var(--green)">-${Math.abs(r.diffDias)}d</span>`)
+      : '—';
+    const docParc = [r.nrDoc, r.parcela].filter(Boolean).join(' / ') || '—';
+    return `<tr>
+      <td><strong>${r.ap||'—'}</strong></td>
+      <td>${r.fornecedor}</td>
+      <td>${r.filial}</td>
+      <td>${r.categoria}</td>
+      <td style="font-size:11px;color:var(--muted)">${docParc}</td>
+      <td>${r.vencimento?r.vencimento.toLocaleDateString('pt-BR'):'—'}</td>
+      <td style="text-align:right;font-weight:600">${fmtFull(r.valor)}</td>
+      <td><span class="badge ${r.vencido?'red':'green'}">${r.vencido?'Vencido':'A Vencer'}</span></td>
+      <td style="text-align:center">${diasStr}</td>
+    </tr>`;
+  }).join('');
+  if(rows.length>300) tbody.innerHTML += `<tr><td colspan="9" style="text-align:center;color:var(--muted);font-style:italic">Exibindo 300 de ${rows.length} registros</td></tr>`;
+}
+document.getElementById('filter-text').addEventListener('input', applyFilters);
+document.getElementById('filter-status').addEventListener('change', applyFilters);
+
+// ─── INIT ───────────────────────────────────────────────
+loadFromSheets();
+</script>
+</body>
+</html>
